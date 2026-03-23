@@ -1,157 +1,190 @@
-# ⚡ Quick Start Guide
+# 🚀 Quick Start Guide
 
-Get the Lead Scraper running in 10 minutes.
+## 5-Minute Setup
 
-## Prerequisites
-- Node.js 16+
-- A Supabase account (free at supabase.com)
-- An Anthropic API key (free at console.anthropic.com)
+### Prerequisites
+- Node.js v18+
+- Supabase account (free)
+- Anthropic API key
 
-## 1️⃣ Setup (5 minutes)
-
+### Step 1: Clone & Install
 ```bash
-# Clone/navigate to project
+git clone <repo>
 cd lead-scraper
-
-# Install all dependencies
 npm install
-
-# Copy environment template
-cp .env.example .env
-
-# Edit .env with your API keys
-nano .env  # or use your preferred editor
+cd backend && npm install && cd ..
+cd frontend && npm install && cd ..
 ```
 
-**What to add to .env:**
-```
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_ANON_KEY=eyJ...
-ANTHROPIC_API_KEY=sk-ant-...
-```
-
-## 2️⃣ Database Setup (3 minutes)
-
-1. Go to your Supabase project
-2. Click "SQL Editor" → "New Query"
-3. Copy-paste this:
-
-```sql
-CREATE TABLE leads (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name TEXT NOT NULL,
-  phone TEXT,
-  email TEXT,
-  website TEXT,
-  address TEXT,
-  business_type TEXT,
-  ai_score NUMERIC DEFAULT 0,
-  ai_category TEXT,
-  ai_confidence NUMERIC DEFAULT 0,
-  raw_data JSONB,
-  source TEXT,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
-CREATE TABLE scrape_jobs (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  status TEXT DEFAULT 'pending',
-  source TEXT NOT NULL,
-  total_leads INTEGER DEFAULT 0,
-  processed_leads INTEGER DEFAULT 0,
-  started_at TIMESTAMP WITH TIME ZONE,
-  completed_at TIMESTAMP WITH TIME ZONE,
-  error_message TEXT,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
-CREATE TABLE job_logs (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  job_id UUID REFERENCES scrape_jobs(id) ON DELETE CASCADE,
-  message TEXT,
-  level TEXT DEFAULT 'info',
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
-CREATE INDEX idx_leads_source ON leads(source);
-CREATE INDEX idx_leads_ai_score ON leads(ai_score);
-CREATE INDEX idx_leads_created_at ON leads(created_at);
-CREATE INDEX idx_jobs_status ON scrape_jobs(status);
-CREATE INDEX idx_job_logs_job_id ON job_logs(job_id);
-```
-
-4. Click "Run"
-
-## 3️⃣ Start the App (2 minutes)
-
+### Step 2: Configure Environment
 ```bash
-# From project root
-npm run dev
-
-# You'll see:
-# ✓ Backend running on http://localhost:3002
-# ✓ Frontend running on http://localhost:3001
+cp .env.example .env
+# Edit .env with your API keys:
+# SUPABASE_URL, SUPABASE_ANON_KEY
+# ANTHROPIC_API_KEY
+# SENDGRID_API_KEY, TWILIO credentials
 ```
 
-Open http://localhost:3001 in your browser! 🎉
+### Step 3: Database Setup
+```bash
+# In Supabase SQL editor:
+# Copy & paste entire backend/db/migrations.sql
+# Click Execute
+```
 
-## 🧪 Test It
+### Step 4: Start Servers
+```bash
+# Terminal 1:
+cd backend && npm run dev
+# Server: http://localhost:3001
 
-1. **Dashboard tab** → Enter search query (e.g., "plumbers") → Click "Start Scrape Job"
-2. **Jobs tab** → Watch your job progress in real-time
-3. **Leads tab** → View scraped and qualified leads (once job completes)
+# Terminal 2:
+cd frontend && npm run dev
+# App: http://localhost:5173
+```
 
-## 🆘 Troubleshooting
+### Step 5: Test
+```
+Demo Email: demo@example.com
+Demo Password: demo123
 
-| Error | Fix |
-|-------|-----|
-| `Cannot find module` | Run `npm install` in that directory |
-| `Port 3002 already in use` | `lsof -i :3002` then `kill -9 <PID>` |
-| Supabase connection fails | Check URL/keys in `.env` |
-| Claude errors | Verify API key and account has credits |
-
-## 📚 Next Steps
-
-- [Full Setup Guide](SETUP.md)
-- [Architecture Overview](ARCHITECTURE.md)
-- [Complete Documentation](README.md)
-- [Deployment Guide](DEPLOYMENT.md)
-
-## 🚀 Key Files
-
-| File | Purpose |
-|------|---------|
-| `backend/server.js` | Express server entry point |
-| `frontend/src/App.jsx` | React app root |
-| `backend/services/aiQualification.js` | Claude integration |
-| `backend/services/scrapers/` | Data sources |
-| `frontend/src/pages/` | Dashboard/Jobs/Leads UI |
-
-## 💡 Quick Tips
-
-- **Real-time updates**: Browser auto-refreshes job status every 5 seconds
-- **CSV export**: Go to Leads tab, filter what you want, click "Export"
-- **Add more scrapers**: Create new file in `backend/services/scrapers/`
-- **Customize AI**: Edit prompt in `backend/services/aiQualification.js`
-
-## 🎯 What's Working
-
-✅ Scrape leads from multiple sources
-✅ AI qualification with scores and categories
-✅ Real-time job monitoring
-✅ Lead filtering and search
-✅ CSV export
-✅ Complete REST API
-
-## 📞 Need Help?
-
-1. Check job logs (Jobs tab → click job → view logs)
-2. Check browser console (F12)
-3. Check backend terminal for errors
-4. Read [Troubleshooting](SETUP.md#troubleshooting) section
+👉 Click "Sign In" on app
+```
 
 ---
 
-**That's it!** You now have a fully functional lead scraper with AI qualification. 🎉
+## 📁 Important Files
+
+| File | Purpose |
+|------|---------|
+| `frontend/src/App.jsx` | Main routing |
+| `backend/server.js` | API server |
+| `backend/routes/auth.js` | Authentication |
+| `backend/agents/dm-agent-opus.js` | Auto DM agent |
+| `backend/db/migrations.sql` | Database |
+
+---
+
+## 🔗 Key URLs
+
+| URL | Purpose |
+|-----|---------|
+| http://localhost:5173 | Frontend app |
+| http://localhost:3001 | Backend API |
+| http://localhost:3001/health | API health |
+
+---
+
+## 🛠️ Common Commands
+
+```bash
+# Frontend
+cd frontend
+npm run dev          # Start dev server
+npm run build        # Build for production
+
+# Backend
+cd backend
+npm run dev          # Start dev server
+npm start            # Start production server
+
+# Database
+# Use Supabase SQL editor for queries
+```
+
+---
+
+## 📋 File Structure
+
+```
+frontend/src/
+  ├── pages/          # 7 dashboard pages
+  ├── components/     # Reusable UI
+  └── services/       # API calls
+
+backend/
+  ├── routes/         # API endpoints
+  ├── agents/         # AI agents
+  ├── middleware/     # Auth, security
+  └── db/             # Database schema
+```
+
+---
+
+## 🔐 API Authentication
+
+All API calls need JWT token:
+
+```javascript
+const token = localStorage.getItem('auth_token');
+const headers = {
+  'Authorization': `Bearer ${token}`,
+  'Content-Type': 'application/json'
+};
+```
+
+---
+
+## 🧪 Test API Endpoint
+
+```bash
+# Get token
+curl -X POST http://localhost:3001/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"demo@example.com","password":"demo123"}'
+
+# Use token to get leads
+curl -X GET http://localhost:3001/api/leads \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+---
+
+## 📚 Documentation
+
+- **DEVELOPER_GUIDE.md** - Full developer docs
+- **API_REFERENCE.md** - All API endpoints
+- **APP_BUILD_COMPLETE.md** - Feature overview
+
+---
+
+## ❌ Troubleshooting
+
+| Problem | Solution |
+|---------|----------|
+| `Cannot find module` | Run `npm install` |
+| `Port 3001 in use` | Change PORT in .env |
+| `Database error` | Check Supabase URL/key in .env |
+| `API timeout` | Check backend is running |
+
+---
+
+## 🎯 First Steps After Setup
+
+1. ✅ Login with demo credentials
+2. ✅ View Dashboard
+3. ✅ Check Leads page
+4. ✅ Create a Campaign
+5. ✅ View Analytics
+
+---
+
+## 💡 Tips
+
+- Use browser DevTools to see API calls
+- Check browser console for errors
+- Backend logs show all requests
+- Supabase SQL editor for database queries
+
+---
+
+## 📞 Need Help?
+
+1. Check DEVELOPER_GUIDE.md
+2. Check API_REFERENCE.md
+3. Review error messages
+4. Check Supabase/API logs
+
+---
+
+**You're ready to code! Good luck!** 🚀

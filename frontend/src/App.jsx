@@ -1,158 +1,94 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Sparkles, Menu, X } from 'lucide-react';
-import CursorFollower from './components/ui/cursor-follower';
-import { GlobalBackground } from './components/ui/GlobalBackground';
-import { SplineHeroSection } from './components/sections/SplineHeroSection';
-import { ScrollDashboardDemo } from './components/sections/ScrollDashboardDemo';
-import { NavigationDock } from './components/sections/NavigationDock';
-import { SocialProofBar } from './components/sections/SocialProofBar';
-import { FeaturesSection } from './components/sections/FeaturesSection';
-import { DashboardSection } from './components/sections/DashboardSection';
-import { IndustriesSection } from './components/sections/IndustriesSection';
-import { HowItWorksSection } from './components/sections/HowItWorksSection';
-import { IntegrationsSection } from './components/sections/IntegrationsSection';
-import { PricingSection } from './components/sections/PricingSection';
-import { TestimonialsSection } from './components/sections/TestimonialsSection';
-import { FAQSection } from './components/sections/FAQSection';
-import { CTASection } from './components/sections/CTASection';
-import { Footer } from './components/sections/Footer';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
+
+// Pages
+import Landing from './pages/Landing';
+import Login from './pages/Login';
+import Signup from './pages/Signup';
+import Dashboard from './pages/Dashboard';
+import LeadsView from './pages/LeadsView';
+import CampaignsPage from './pages/CampaignsPage';
+import TemplatesPage from './pages/TemplatesPage';
+import AnalyticsPage from './pages/AnalyticsPage';
+import AgentLogsPage from './pages/AgentLogsPage';
+import SettingsPage from './pages/SettingsPage';
+
+// Components
+import ProtectedRoute from './components/auth/ProtectedRoute';
+import Navbar from './components/layout/Navbar';
+import Sidebar from './components/layout/Sidebar';
 
 function App() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  return (
-    <div className="min-h-screen bg-black text-white overflow-x-hidden relative">
-      {/* Fixed global background with pulsing glows + geometric shapes */}
-      <GlobalBackground />
+  // Check authentication on mount
+  useEffect(() => {
+    const token = localStorage.getItem('auth_token');
+    if (token) {
+      setIsAuthenticated(true);
+    }
+    setLoading(false);
+  }, []);
 
-      {/* Global cursor follower */}
-      <CursorFollower />
-
-      {/* Foreground content */}
-      <div className="relative z-10">
-        {/* Glass Navigation */}
-        <GlassNavigation mobileMenuOpen={mobileMenuOpen} setMobileMenuOpen={setMobileMenuOpen} />
-
-        {/* Main content */}
-        <main>
-          <SplineHeroSection />
-          <SocialProofBar />
-          <ScrollDashboardDemo />
-          <DashboardSection />
-          <FeaturesSection />
-          <IndustriesSection />
-          <HowItWorksSection />
-          <IntegrationsSection />
-          <PricingSection />
-          <TestimonialsSection />
-          <FAQSection />
-          <CTASection />
-        </main>
-
-        <Footer />
-        <NavigationDock />
-      </div>
-    </div>
-  );
-}
-
-function GlassNavigation({ mobileMenuOpen, setMobileMenuOpen }) {
-  return (
-    <motion.nav
-      initial={{ y: -100 }}
-      animate={{ y: 0 }}
-      transition={{ type: "spring", stiffness: 100, damping: 20 }}
-      className="fixed top-0 left-0 right-0 z-50 px-4 sm:px-6 py-4"
-    >
-      <div className="max-w-7xl mx-auto">
-        <div className="relative backdrop-blur-xl bg-black/40 border border-cyan-500/20 rounded-2xl px-6 py-3 shadow-2xl shadow-cyan-500/10 overflow-hidden">
-          {/* Animated flowing gradient inside nav */}
-          <motion.div
-            className="absolute inset-0 opacity-30"
-            style={{ background: "linear-gradient(90deg, transparent, rgba(6, 182, 212, 0.25), transparent)" }}
-            animate={{ x: [-200, 1200] }}
-            transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-          />
-
-          {/* Content */}
-          <div className="flex items-center justify-between relative z-10">
-            {/* Logo */}
-            <a href="#" className="flex items-center gap-2">
-              <motion.div
-                className="w-10 h-10 rounded-lg overflow-hidden flex items-center justify-center"
-                whileHover={{ scale: 1.1 }}
-                transition={{ duration: 0.3 }}
-              >
-                <img src="/logo.png" alt="Agent Lead" className="w-10 h-10 object-contain" />
-              </motion.div>
-              <span className="font-semibold text-lg bg-gradient-to-r from-white to-cyan-200 bg-clip-text text-transparent">
-                Agent Lead
-              </span>
-            </a>
-
-            {/* Desktop nav */}
-            <div className="hidden md:flex items-center gap-8">
-              {["Features", "Industries", "How It Works", "Pricing", "FAQ"].map((item) => (
-                <a
-                  key={item}
-                  href={`#${item.toLowerCase().replace(/\s+/g, "-")}`}
-                  className="text-sm text-gray-300 hover:text-cyan-400 transition-colors relative group"
-                >
-                  {item}
-                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-cyan-400 group-hover:w-full transition-all duration-300" />
-                </a>
-              ))}
-            </div>
-
-            {/* CTA */}
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="hidden md:block relative bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-400 hover:to-cyan-500 text-white px-6 py-2 rounded-lg text-sm font-medium transition-all shadow-lg shadow-cyan-500/30 overflow-hidden"
-            >
-              <motion.div
-                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
-                animate={{ x: [-100, 200] }}
-                transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 0.5 }}
-              />
-              <span className="relative z-10">Get Started</span>
-            </motion.button>
-
-            {/* Mobile toggle */}
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden text-gray-400 hover:text-white transition-colors"
-            >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
-          </div>
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500 mx-auto mb-4"></div>
+          <p className="text-gray-400">Loading...</p>
         </div>
-
-        {/* Mobile menu */}
-        {mobileMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="md:hidden mt-2 backdrop-blur-xl bg-black/80 border border-cyan-500/20 rounded-2xl px-6 py-6 space-y-4"
-          >
-            {["Features", "Industries", "How It Works", "Pricing", "FAQ"].map((item) => (
-              <a
-                key={item}
-                href={`#${item.toLowerCase().replace(/\s+/g, "-")}`}
-                onClick={() => setMobileMenuOpen(false)}
-                className="block text-gray-300 hover:text-cyan-400 transition-colors py-2"
-              >
-                {item}
-              </a>
-            ))}
-            <button className="w-full bg-cyan-500 hover:bg-cyan-400 text-gray-950 px-5 py-3 rounded-lg font-semibold transition-all">
-              Get Started
-            </button>
-          </motion.div>
-        )}
       </div>
-    </motion.nav>
+    );
+  }
+
+  return (
+    <Router>
+      <Toaster position="top-right" />
+      <Routes>
+        {/* Public Routes */}
+        <Route path="/" element={<Landing />} />
+        <Route 
+          path="/login" 
+          element={isAuthenticated ? <Navigate to="/dashboard" /> : <Login setIsAuthenticated={setIsAuthenticated} />} 
+        />
+        <Route 
+          path="/signup" 
+          element={isAuthenticated ? <Navigate to="/dashboard" /> : <Signup setIsAuthenticated={setIsAuthenticated} />} 
+        />
+
+        {/* Protected Routes */}
+        <Route
+          path="/dashboard/*"
+          element={
+            <ProtectedRoute isAuthenticated={isAuthenticated}>
+              <div className="flex h-screen bg-gray-900">
+                <Sidebar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />
+                <div className="flex-1 overflow-hidden flex flex-col">
+                  <Navbar setIsAuthenticated={setIsAuthenticated} />
+                  <main className="flex-1 overflow-auto">
+                    <Routes>
+                      <Route path="/" element={<Dashboard />} />
+                      <Route path="/leads" element={<LeadsView />} />
+                      <Route path="/campaigns" element={<CampaignsPage />} />
+                      <Route path="/templates" element={<TemplatesPage />} />
+                      <Route path="/analytics" element={<AnalyticsPage />} />
+                      <Route path="/agent-logs" element={<AgentLogsPage />} />
+                      <Route path="/settings" element={<SettingsPage />} />
+                    </Routes>
+                  </main>
+                </div>
+              </div>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Catch all */}
+        <Route path="*" element={<Navigate to="/" />} />
+      </Routes>
+    </Router>
   );
 }
 

@@ -5,7 +5,10 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node --watch server.js"
+    "dev": "node --watch server.js",
+    "test": "node test-runner.js",
+    "test:coverage": "jest --coverage || true",
+    "test:watch": "jest --watch || true"
   },
   "dependencies": {
     "express": "^4.18.2",
@@ -23,6 +26,10 @@
     "node-cron": "^3.0.3",
     "nodemailer": "^6.9.8",
     "twilio": "^4.23.0",
-    "uuid": "^9.0.1"
+    "uuid": "^9.0.1",
+    "playwright": "^1.40.1"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
   }
 }

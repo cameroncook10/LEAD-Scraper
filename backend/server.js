@@ -4,6 +4,8 @@ import dotenv from 'dotenv';
 import { createClient } from '@supabase/supabase-js';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import authRoutes from './routes/auth.js';
+import agentsRoutes from './routes/agents.js';
 import scrapeRoutes from './routes/scrape.js';
 import leadsRoutes from './routes/leads.js';
 import jobsRoutes from './routes/jobs.js';
@@ -70,6 +72,8 @@ app.get('/health', (req, res) => {
 });
 
 // Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/agents', agentsRoutes);
 app.use('/api/scrape', scrapeRoutes);
 app.use('/api/leads', leadsRoutes);
 app.use('/api/jobs', jobsRoutes);
