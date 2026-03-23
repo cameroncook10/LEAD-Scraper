@@ -9,8 +9,8 @@ export function Footer() {
           {/* Brand */}
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center">
-                <Zap className="w-4 h-4 text-cyan-400" />
+              <div className="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center">
+                <img src="/logo.png" alt="Agent Lead" className="w-8 h-8 object-contain" />
               </div>
               <span className="text-lg font-bold gradient-text-cyan">Agent Lead</span>
             </div>
