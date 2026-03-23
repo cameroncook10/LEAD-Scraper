@@ -8,8 +8,8 @@ export const tradingConfig = {
   apis: {
     anthropic: {
       apiKey: process.env.ANTHROPIC_API_KEY || '',
-      model: 'claude-3-5-sonnet-20241022',
-      maxTokens: 1024,
+      model: 'claude-opus-4-20250514',
+      maxTokens: 4096,
     },
     xai: {
       apiKey: process.env.XAI_API_KEY || '',

@@ -13,8 +13,8 @@ class OpusDecisionService {
       apiKey: process.env.ANTHROPIC_API_KEY,
     });
 
-    this.model = 'claude-3-5-sonnet-20241022'; // Using Sonnet as standard (Opus alternative)
-    this.maxTokens = 1024;
+    this.model = 'claude-opus-4-20250514'; // Using Opus 4.6 for superior decision quality
+    this.maxTokens = 4096;
     this.cache = new Map();
     this.cacheExpiry = 10 * 60 * 1000; // 10 minutes for decisions
   }
