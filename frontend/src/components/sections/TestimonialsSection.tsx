@@ -55,7 +55,7 @@ export function TestimonialsSection() {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: i * 0.15 }}
               viewport={{ once: true }}
-              className="rounded-xl border border-gray-800 bg-gray-900/80 p-8 hover:border-cyan-500/20 transition-colors duration-200"
+              className="rounded-xl border border-gray-800 bg-gray-900/50 backdrop-blur-sm p-8 hover:border-cyan-500/20 transition-all duration-500"
             >
               {/* Stars */}
               <div className="flex items-center gap-1 mb-4">

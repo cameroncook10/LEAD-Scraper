@@ -55,10 +55,10 @@ export function FeaturesSection() {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
+          transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-cyan-500/10 border border-cyan-500/20 mb-6">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full backdrop-blur-xl bg-cyan-500/10 border border-cyan-500/20 mb-6">
             <span className="text-sm text-cyan-300">Features</span>
           </div>
           <h2 className="text-4xl md:text-5xl font-bold mb-4 text-white">
@@ -81,16 +81,37 @@ export function FeaturesSection() {
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: index * 0.08, duration: 0.5 }}
-                className="group"
+                transition={{ delay: index * 0.1, duration: 0.6 }}
+                whileHover={{ y: -8 }}
+                className="group relative"
               >
-                <div className="bg-gray-900/80 border border-gray-800 rounded-2xl p-6 h-full hover:border-cyan-500/30 transition-colors duration-200">
-                  <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${feature.color} flex items-center justify-center mb-4`}>
+                {/* Hover glow */}
+                <div className="absolute inset-0 bg-cyan-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl blur-xl -z-10" />
+
+                <div className="backdrop-blur-xl bg-black/40 border border-cyan-500/20 rounded-2xl p-6 h-full hover:border-cyan-500/40 transition-all duration-300 shadow-2xl hover:shadow-cyan-500/20 relative overflow-hidden">
+                  {/* Shimmer effect */}
+                  <motion.div
+                    className="absolute inset-0 opacity-0 group-hover:opacity-100"
+                    initial={{ x: -200 }}
+                    whileHover={{ x: 200 }}
+                    transition={{ duration: 0.6 }}
+                    style={{
+                      background: "linear-gradient(90deg, transparent, rgba(6, 182, 212, 0.1), transparent)",
+                    }}
+                  />
+
+                  <motion.div
+                    className={`w-12 h-12 rounded-xl bg-gradient-to-br ${feature.color} flex items-center justify-center mb-4 shadow-lg relative z-10`}
+                    whileHover={{ rotate: 360, scale: 1.1 }}
+                    transition={{ duration: 0.5 }}
+                  >
                     <Icon className="w-6 h-6 text-white" />
-                  </div>
-                  <h3 className="text-xl font-semibold mb-3 text-white">{feature.title}</h3>
-                  <p className="text-gray-400 mb-4 text-sm leading-relaxed">{feature.description}</p>
-                  <ul className="space-y-2">
+                  </motion.div>
+
+                  <h3 className="text-xl font-semibold mb-3 text-white relative z-10">{feature.title}</h3>
+                  <p className="text-gray-400 mb-4 text-sm leading-relaxed relative z-10">{feature.description}</p>
+
+                  <ul className="space-y-2 relative z-10">
                     {feature.bullets.map((item, j) => (
                       <li key={j} className="flex items-center gap-2 text-sm text-gray-300">
                         <Check className="w-4 h-4 text-cyan-400 flex-shrink-0" />
