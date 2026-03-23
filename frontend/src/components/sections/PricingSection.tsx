@@ -63,8 +63,8 @@ const plans = [
 export function PricingSection() {
   return (
     <section id="pricing" className="relative py-24 px-4 sm:px-6 lg:px-8 bg-gray-950/50">
-      {/* Glow effect */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-cyan-500/5 rounded-full blur-[120px] pointer-events-none" />
+      {/* Subtle radial glow — no blur */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full pointer-events-none opacity-[0.03]" style={{ background: "radial-gradient(circle, #22d3ee, transparent 70%)" }} />
 
       <div className="relative max-w-7xl mx-auto">
         {/* Section header */}
