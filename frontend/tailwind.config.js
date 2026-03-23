@@ -149,7 +149,15 @@ export default {
         fadeIn: 'fadeIn 200ms ease-in',
         slideUp: 'slideUp 300ms ease-out',
         slideDown: 'slideDown 300ms ease-out',
-        pulse: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
+        pulse: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        flowingLine: 'flowingLine 8s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        morphBlob: 'morphBlob 8s ease-in-out infinite',
+        dotPulse: 'dotPulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        shimmer: 'shimmer 2s cubic-bezier(0.4, 0, 0.2, 1) infinite',
+        float: 'float 6s ease-in-out infinite',
+        spin3d: 'spin3d 3s linear infinite',
+        gradient: 'gradient 3s ease infinite',
+        glow: 'glow 2s ease-in-out infinite'
       },
       keyframes: {
         fadeIn: {
@@ -163,6 +171,39 @@ export default {
         slideDown: {
           '0%': { transform: 'translateY(-10px)', opacity: '0' },
           '100%': { transform: 'translateY(0)', opacity: '1' }
+        },
+        flowingLine: {
+          '0%': { strokeDashoffset: '1000' },
+          '100%': { strokeDashoffset: '0' }
+        },
+        morphBlob: {
+          '0%': { borderRadius: '60% 40% 30% 70% / 60% 30% 70% 40%' },
+          '50%': { borderRadius: '30% 60% 70% 40% / 50% 60% 30% 60%' },
+          '100%': { borderRadius: '60% 40% 30% 70% / 60% 30% 70% 40%' }
+        },
+        dotPulse: {
+          '0%, 100%': { opacity: '0.1' },
+          '50%': { opacity: '0.5' }
+        },
+        shimmer: {
+          '0%': { backgroundPosition: '-1000px 0' },
+          '100%': { backgroundPosition: '1000px 0' }
+        },
+        float: {
+          '0%, 100%': { transform: 'translateY(0px)' },
+          '50%': { transform: 'translateY(-20px)' }
+        },
+        spin3d: {
+          '0%': { transform: 'rotateY(0deg) rotateX(0deg)' },
+          '100%': { transform: 'rotateY(360deg) rotateX(360deg)' }
+        },
+        gradient: {
+          '0%, 100%': { backgroundPosition: '0% 50%' },
+          '50%': { backgroundPosition: '100% 50%' }
+        },
+        glow: {
+          '0%, 100%': { boxShadow: '0 0 20px rgba(34, 211, 238, 0.3)' },
+          '50%': { boxShadow: '0 0 40px rgba(34, 211, 238, 0.6)' }
         }
       },
       transitionTimingFunction: {
