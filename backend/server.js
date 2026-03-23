@@ -11,6 +11,7 @@ import industriesRoutes from './routes/industries.js';
 import analyticsRoutes from './routes/analytics.js';
 import webhooksRoutes from './routes/webhooks.js';
 import workflowRoutes from './routes/workflows.js';
+import socialAuthRoutes from './routes/socialAuth.js';
 import { initializeDatabase } from './db/schema.js';
 import { startQueueProcessor } from './services/messageQueue.js';
 import { securityHeaders, enforceHttps, sanitizeInput } from './middleware/security.js';
@@ -79,6 +80,7 @@ app.use('/api/industries', industriesRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/webhooks', webhooksRoutes);
 app.use('/api/workflows', workflowRoutes);
+app.use('/api/auth', socialAuthRoutes);
 
 // 404 handler
 app.use((req, res) => {

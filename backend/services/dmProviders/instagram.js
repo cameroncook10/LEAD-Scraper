@@ -1,32 +1,57 @@
 /**
- * Instagram DM Provider
+ * Instagram DM Provider — Per-User Token Version
  * 
- * Sends direct messages via the Instagram Graph API (Messenger Platform).
- * Requires a Facebook Business account linked to an Instagram Professional account.
- * 
- * Setup:
- * 1. Create a Facebook App at developers.facebook.com
- * 2. Add the "Instagram" product
- * 3. Generate a long-lived access token
- * 4. Set INSTAGRAM_ACCESS_TOKEN and INSTAGRAM_BUSINESS_ACCOUNT_ID in .env
+ * Pulls the user's Instagram access token from the `api_keys` table
+ * instead of using a global .env token.
  */
+import { supabase } from '../../server.js';
 
 const INSTAGRAM_API_BASE = 'https://graph.instagram.com/v21.0';
 
 /**
- * Send a DM to an Instagram user.
- * 
- * @param {Object} delivery - The delivery object with lead + campaign data
- * @returns {{ success: boolean, messageId?: string, error?: string }}
+ * Get a user's Instagram credentials from the database.
  */
-export async function sendInstagramDM(delivery) {
-  const accessToken = process.env.INSTAGRAM_ACCESS_TOKEN;
-  const businessAccountId = process.env.INSTAGRAM_BUSINESS_ACCOUNT_ID;
+async function getUserInstagramCreds(userId) {
+  const { data, error } = await supabase
+    .from('api_keys')
+    .select('encrypted_key, metadata')
+    .eq('user_id', userId)
+    .eq('provider', 'instagram')
+    .single();
+
+  if (error || !data) return null;
+
+  return {
+    accessToken: data.encrypted_key,
+    businessAccountId: data.metadata?.ig_business_id,
+    pageId: data.metadata?.page_id,
+    expiresAt: data.metadata?.expires_at,
+  };
+}
+
+/**
+ * Send a DM to an Instagram user.
+ */
+export async function sendInstagramDM(delivery, userId) {
+  // Try per-user token first, fall back to .env
+  let accessToken, businessAccountId;
+  
+  if (userId) {
+    const creds = await getUserInstagramCreds(userId);
+    if (creds) {
+      accessToken = creds.accessToken;
+      businessAccountId = creds.businessAccountId;
+    }
+  }
+  
+  // Fallback to .env (for testing or admin use)
+  accessToken = accessToken || process.env.INSTAGRAM_ACCESS_TOKEN;
+  businessAccountId = businessAccountId || process.env.INSTAGRAM_BUSINESS_ACCOUNT_ID;
 
   if (!accessToken || !businessAccountId) {
     return { 
       success: false, 
-      error: 'Instagram API not configured. Set INSTAGRAM_ACCESS_TOKEN and INSTAGRAM_BUSINESS_ACCOUNT_ID in .env' 
+      error: 'Instagram not connected. Please connect your Instagram account in Settings.' 
     };
   }
 
@@ -38,18 +63,15 @@ export async function sendInstagramDM(delivery) {
       return { success: false, error: 'No lead data found for delivery' };
     }
 
-    // Get the Instagram user ID for the lead
-    // In production, you'd look this up from scraped social data
     const igUserId = lead.raw_data?.instagram_user_id;
     
     if (!igUserId) {
       return { success: false, error: 'Lead has no Instagram user ID' };
     }
 
-    // Build the message (template body with variable substitution)
-    let messageText = campaign?.body || delivery?.metadata?.personalizedMessage || '';
+    // Build the message
+    let messageText = delivery?.metadata?.personalizedMessage || campaign?.body || '';
     
-    // Simple variable replacement
     messageText = messageText
       .replace(/{{name}}/g, lead.name || 'there')
       .replace(/{{business}}/g, lead.name || 'your business')
@@ -78,24 +100,28 @@ export async function sendInstagramDM(delivery) {
       };
     }
 
-    return { 
-      success: true, 
-      messageId: data.message_id || data.id,
-    };
+    return { success: true, messageId: data.message_id || data.id };
   } catch (error) {
-    return { 
-      success: false, 
-      error: `Instagram send failed: ${error.message}` 
-    };
+    return { success: false, error: `Instagram send failed: ${error.message}` };
   }
 }
 
 /**
  * Check if an Instagram conversation has a reply.
- * Useful for follow-up workflow logic.
  */
-export async function checkInstagramReply(conversationId) {
-  const accessToken = process.env.INSTAGRAM_ACCESS_TOKEN;
+export async function checkInstagramReply(conversationId, userId) {
+  let accessToken, businessId;
+  
+  if (userId) {
+    const creds = await getUserInstagramCreds(userId);
+    if (creds) {
+      accessToken = creds.accessToken;
+      businessId = creds.businessAccountId;
+    }
+  }
+  
+  accessToken = accessToken || process.env.INSTAGRAM_ACCESS_TOKEN;
+  businessId = businessId || process.env.INSTAGRAM_BUSINESS_ACCOUNT_ID;
   
   if (!accessToken) return { hasReply: false };
 
@@ -106,13 +132,8 @@ export async function checkInstagramReply(conversationId) {
     );
 
     const data = await response.json();
-    
-    if (!response.ok || !data.data) {
-      return { hasReply: false };
-    }
+    if (!response.ok || !data.data) return { hasReply: false };
 
-    // Check if any message is NOT from our business account
-    const businessId = process.env.INSTAGRAM_BUSINESS_ACCOUNT_ID;
     const replies = data.data.filter(msg => msg.from?.id !== businessId);
     
     return { 
@@ -120,7 +141,6 @@ export async function checkInstagramReply(conversationId) {
       latestReply: replies[0] || null,
     };
   } catch (error) {
-    console.error('[Instagram] Reply check failed:', error);
     return { hasReply: false };
   }
 }

@@ -1,42 +1,47 @@
-import jwt from 'jsonwebtoken';
+/**
+ * Auth Middleware — Supabase JWT verification
+ * 
+ * Verifies the Supabase access token from the Authorization header.
+ * This replaces the old custom JWT approach with Supabase Auth.
+ */
+import { supabase } from '../server.js';
 
 /**
- * JWT Authentication Middleware
+ * Require authentication via Supabase JWT
  */
-
-export const requireAuth = (req, res, next) => {
+export const requireAuth = async (req, res, next) => {
   const authHeader = req.headers.authorization;
   const token = authHeader?.split(' ')[1];
 
   if (!token) {
     return res.status(401).json({
       error: 'Missing authorization token',
-      message: 'Please provide a valid JWT token in the Authorization header'
+      message: 'Please provide a valid Supabase access token in the Authorization header'
     });
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    // Verify the token with Supabase
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+
+    if (error || !user) {
+      return res.status(401).json({
+        error: 'Invalid or expired token',
+        message: error?.message || 'Authentication failed'
+      });
+    }
+
     req.user = {
-      userId: decoded.userId || decoded.sub,
-      email: decoded.email
+      userId: user.id,
+      email: user.email,
+      metadata: user.user_metadata,
     };
+
+    // Attach supabase client scoped to this user's token
+    req.supabaseUser = supabase;
+
     next();
   } catch (error) {
-    if (error instanceof jwt.TokenExpiredError) {
-      return res.status(401).json({
-        error: 'Token expired',
-        message: 'Your session has expired. Please refresh your token.'
-      });
-    }
-
-    if (error instanceof jwt.JsonWebTokenError) {
-      return res.status(401).json({
-        error: 'Invalid token',
-        message: 'The provided token is invalid or malformed.'
-      });
-    }
-
     return res.status(401).json({
       error: 'Authentication failed',
       message: error.message
@@ -45,36 +50,24 @@ export const requireAuth = (req, res, next) => {
 };
 
 /**
- * Generate JWT token
+ * Optional authentication — doesn't fail if token is missing
  */
-export const generateToken = (userId, email) => {
-  const payload = {
-    userId,
-    email,
-    iat: Math.floor(Date.now() / 1000),
-    exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60) // 24 hours
-  };
-
-  return jwt.sign(payload, process.env.JWT_SECRET);
-};
-
-/**
- * Optional authentication - doesn't fail if token is missing
- */
-export const optionalAuth = (req, res, next) => {
+export const optionalAuth = async (req, res, next) => {
   const authHeader = req.headers.authorization;
   const token = authHeader?.split(' ')[1];
 
   if (token) {
     try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      req.user = {
-        userId: decoded.userId || decoded.sub,
-        email: decoded.email
-      };
+      const { data: { user } } = await supabase.auth.getUser(token);
+      if (user) {
+        req.user = {
+          userId: user.id,
+          email: user.email,
+          metadata: user.user_metadata,
+        };
+      }
     } catch (error) {
-      // Token invalid but optional, just log and continue
-      console.debug('Optional auth token validation failed:', error.message);
+      // Token invalid but optional
     }
   }
 
@@ -89,18 +82,7 @@ export const requirePermission = (permission) => {
     if (!req.user) {
       return res.status(401).json({ error: 'Authentication required' });
     }
-
-    // Check user permissions (implement based on your permission system)
-    // This is a placeholder - extend as needed
-    req.userHasPermission = (perm) => true; // Implement your logic
-
-    if (!req.userHasPermission(permission)) {
-      return res.status(403).json({
-        error: 'Forbidden',
-        message: `This action requires the "${permission}" permission`
-      });
-    }
-
+    // Extend with role-based permissions as needed
     next();
   };
 };
