@@ -10,6 +10,7 @@ export default defineConfig({
     },
   },
   server: {
+    middlewareMode: true,
     port: 3001,
     host: true,
     proxy: {
@@ -18,5 +19,10 @@ export default defineConfig({
         changeOrigin: true
       }
     }
+  },
+  build: {
+    outDir: 'dist',
+    sourcemap: false,
+    minify: 'terser'
   }
 });

@@ -20,7 +20,7 @@ export const StatCard = ({
           
           {change && (
             <p className={`text-sm font-medium mt-2 ${isPositive ? 'text-emerald-600' : 'text-red-600'}`}>
-              <span className={isPositive ? '↑' : '↓'} className="mr-1" />
+              <span className="mr-1">{isPositive ? '↑' : '↓'}</span>
               {Math.abs(change)}% {isPositive ? 'up' : 'down'} from last period
             </p>
           )}
