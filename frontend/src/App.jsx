@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Sparkles, Menu, X } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { motion, useScroll, useMotionValueEvent, useTransform } from 'framer-motion';
+import { Menu, X, ArrowRight } from 'lucide-react';
 import CursorFollower from './components/ui/cursor-follower';
 import { GlobalBackground } from './components/ui/GlobalBackground';
 import { SplineHeroSection } from './components/sections/SplineHeroSection';
@@ -22,19 +22,13 @@ function App() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-black text-white overflow-x-hidden relative">
-      {/* Fixed global background with pulsing glows + geometric shapes */}
+    <div className="min-h-screen bg-[#050505] text-white overflow-x-hidden relative noise-overlay">
       <GlobalBackground />
-
-      {/* Global cursor follower */}
       <CursorFollower />
 
-      {/* Foreground content */}
       <div className="relative z-10">
-        {/* Glass Navigation */}
         <GlassNavigation mobileMenuOpen={mobileMenuOpen} setMobileMenuOpen={setMobileMenuOpen} />
 
-        {/* Main content */}
         <main>
           <SplineHeroSection />
           <SocialProofBar />
@@ -57,66 +51,81 @@ function App() {
   );
 }
 
+const NAV_ITEMS = ["Features", "Industries", "How It Works", "Pricing", "FAQ"];
+
 function GlassNavigation({ mobileMenuOpen, setMobileMenuOpen }) {
+  const [hidden, setHidden] = useState(false);
+  const { scrollY } = useScroll();
+  const lastScrollY = useRef(0);
+
+  // Hide on scroll down, show on scroll up
+  useMotionValueEvent(scrollY, "change", (latest) => {
+    const direction = latest > lastScrollY.current ? "down" : "up";
+    if (direction === "down" && latest > 150) {
+      setHidden(true);
+    } else {
+      setHidden(false);
+    }
+    lastScrollY.current = latest;
+  });
+
+  // Scroll progress bar
+  const { scrollYProgress } = useScroll();
+  const progressWidth = useTransform(scrollYProgress, [0, 1], ["0%", "100%"]);
+
   return (
     <motion.nav
       initial={{ y: -100 }}
-      animate={{ y: 0 }}
-      transition={{ type: "spring", stiffness: 100, damping: 20 }}
-      className="fixed top-0 left-0 right-0 z-50 px-4 sm:px-6 py-4"
+      animate={{ y: hidden ? -120 : 0 }}
+      transition={{ type: "spring", stiffness: 200, damping: 30 }}
+      className="fixed top-0 left-0 right-0 z-50 px-4 sm:px-6 py-3"
     >
       <div className="max-w-7xl mx-auto">
-        <div className="relative backdrop-blur-xl bg-black/40 border border-cyan-500/20 rounded-2xl px-6 py-3 shadow-2xl shadow-cyan-500/10 overflow-hidden">
-          {/* Animated flowing gradient inside nav */}
+        <div className="relative glass-nav rounded-2xl px-6 py-3 overflow-hidden">
+          
+          {/* Scroll progress bar */}
           <motion.div
-            className="absolute inset-0 opacity-30"
-            style={{ background: "linear-gradient(90deg, transparent, rgba(6, 182, 212, 0.25), transparent)" }}
-            animate={{ x: [-200, 1200] }}
-            transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+            className="absolute top-0 left-0 h-[2px] bg-gradient-to-r from-cyan-500 to-blue-500"
+            style={{ width: progressWidth }}
           />
 
-          {/* Content */}
           <div className="flex items-center justify-between relative z-10">
             {/* Logo */}
-            <a href="#" className="flex items-center gap-2">
+            <a href="#" className="flex items-center gap-2.5">
               <motion.div
-                className="w-10 h-10 rounded-lg overflow-hidden flex items-center justify-center"
-                whileHover={{ scale: 1.1 }}
-                transition={{ duration: 0.3 }}
+                className="w-9 h-9 rounded-lg overflow-hidden flex items-center justify-center"
+                whileHover={{ scale: 1.08 }}
               >
-                <img src="/logo.png" alt="Agent Lead" className="w-10 h-10 object-contain" />
+                <img src="/logo.png" alt="Agent Lead" className="w-9 h-9 object-contain" />
               </motion.div>
-              <span className="font-semibold text-lg bg-gradient-to-r from-white to-cyan-200 bg-clip-text text-transparent">
-                Agent Lead
+              <span className="font-bold text-base tracking-tight">
+                <span className="text-white">Agent</span>
+                <span className="text-cyan-400">Lead</span>
               </span>
             </a>
 
             {/* Desktop nav */}
-            <div className="hidden md:flex items-center gap-8">
-              {["Features", "Industries", "How It Works", "Pricing", "FAQ"].map((item) => (
+            <div className="hidden md:flex items-center gap-7">
+              {NAV_ITEMS.map((item) => (
                 <a
                   key={item}
                   href={`#${item.toLowerCase().replace(/\s+/g, "-")}`}
-                  className="text-sm text-gray-300 hover:text-cyan-400 transition-colors relative group"
+                  className="text-[13px] text-gray-400 hover:text-white transition-colors duration-200 relative group font-medium"
                 >
                   {item}
-                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-cyan-400 group-hover:w-full transition-all duration-300" />
+                  <span className="absolute -bottom-1 left-0 w-0 h-px bg-cyan-400 group-hover:w-full transition-all duration-300" />
                 </a>
               ))}
             </div>
 
             {/* CTA */}
             <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="hidden md:block relative bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-400 hover:to-cyan-500 text-white px-6 py-2 rounded-lg text-sm font-medium transition-all shadow-lg shadow-cyan-500/30 overflow-hidden"
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              className="hidden md:flex items-center gap-2 bg-white text-gray-950 px-5 py-2 rounded-lg text-sm font-semibold hover:bg-gray-100 transition-colors"
             >
-              <motion.div
-                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
-                animate={{ x: [-100, 200] }}
-                transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 0.5 }}
-              />
-              <span className="relative z-10">Get Started</span>
+              Get Started
+              <ArrowRight className="w-3.5 h-3.5" />
             </motion.button>
 
             {/* Mobile toggle */}
@@ -124,7 +133,7 @@ function GlassNavigation({ mobileMenuOpen, setMobileMenuOpen }) {
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="md:hidden text-gray-400 hover:text-white transition-colors"
             >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
           </div>
         </div>
@@ -132,21 +141,21 @@ function GlassNavigation({ mobileMenuOpen, setMobileMenuOpen }) {
         {/* Mobile menu */}
         {mobileMenuOpen && (
           <motion.div
-            initial={{ opacity: 0, y: -10 }}
+            initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
-            className="md:hidden mt-2 backdrop-blur-xl bg-black/80 border border-cyan-500/20 rounded-2xl px-6 py-6 space-y-4"
+            className="md:hidden mt-2 glass-nav rounded-2xl px-6 py-5 space-y-3"
           >
-            {["Features", "Industries", "How It Works", "Pricing", "FAQ"].map((item) => (
+            {NAV_ITEMS.map((item) => (
               <a
                 key={item}
                 href={`#${item.toLowerCase().replace(/\s+/g, "-")}`}
                 onClick={() => setMobileMenuOpen(false)}
-                className="block text-gray-300 hover:text-cyan-400 transition-colors py-2"
+                className="block text-gray-300 hover:text-white transition-colors py-1.5 text-sm"
               >
                 {item}
               </a>
             ))}
-            <button className="w-full bg-cyan-500 hover:bg-cyan-400 text-gray-950 px-5 py-3 rounded-lg font-semibold transition-all">
+            <button className="w-full bg-white text-gray-950 px-5 py-2.5 rounded-lg font-semibold text-sm">
               Get Started
             </button>
           </motion.div>

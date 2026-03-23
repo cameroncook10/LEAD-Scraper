@@ -1,51 +1,49 @@
-import React from "react";
-import { motion } from "framer-motion";
+import React from 'react';
 
+/**
+ * Performance-optimized global background.
+ * Uses static CSS radial gradients layered on top of each other
+ * instead of framer-motion animated orbs — zero GPU overhead.
+ * A noise texture is applied via CSS class on the root element.
+ */
 export function GlobalBackground() {
   return (
-    <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-      {/* Base gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-black via-gray-950 to-black" />
-
-      {/* Three slow-pulsing orbs — GPU composited */}
-      <motion.div
-        animate={{ scale: [1, 1.2, 1], opacity: [0.1, 0.18, 0.1] }}
-        transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-cyan-500/15 rounded-full blur-[100px] will-change-transform"
-      />
-      <motion.div
-        animate={{ scale: [1.1, 1, 1.1], opacity: [0.12, 0.2, 0.12] }}
-        transition={{ duration: 12, repeat: Infinity, ease: "easeInOut", delay: 3 }}
-        className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-cyan-400/12 rounded-full blur-[80px] will-change-transform"
-      />
-      <motion.div
-        animate={{ scale: [1, 1.3, 1], opacity: [0.06, 0.12, 0.06] }}
-        transition={{ duration: 14, repeat: Infinity, ease: "easeInOut", delay: 6 }}
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-cyan-300/10 rounded-full blur-[120px] will-change-transform"
+    <div className="fixed inset-0 z-0 pointer-events-none" aria-hidden="true">
+      {/* Layer 1: Deep mesh gradient */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background: `
+            radial-gradient(ellipse 80% 50% at 50% -20%, rgba(6, 182, 212, 0.12) 0%, transparent 50%),
+            radial-gradient(ellipse 60% 40% at 80% 50%, rgba(59, 130, 246, 0.06) 0%, transparent 50%),
+            radial-gradient(ellipse 50% 60% at 10% 80%, rgba(139, 92, 246, 0.05) 0%, transparent 50%),
+            radial-gradient(ellipse 40% 30% at 70% 100%, rgba(6, 182, 212, 0.04) 0%, transparent 50%),
+            linear-gradient(180deg, #050505 0%, #0a0a0a 50%, #050505 100%)
+          `,
+        }}
       />
 
-      {/* Two diagonal flowing lines — lightweight SVG */}
-      <svg className="absolute inset-0 w-full h-full">
-        <defs>
-          <linearGradient id="lg-global" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#06b6d4" stopOpacity="0" />
-            <stop offset="50%" stopColor="#22d3ee" stopOpacity="0.25" />
-            <stop offset="100%" stopColor="#06b6d4" stopOpacity="0" />
-          </linearGradient>
-        </defs>
-        <motion.line
-          x1="0%" y1="0%" x2="100%" y2="100%"
-          stroke="url(#lg-global)" strokeWidth="1"
-          animate={{ opacity: [0, 0.2, 0] }}
-          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-        />
-        <motion.line
-          x1="100%" y1="0%" x2="0%" y2="100%"
-          stroke="url(#lg-global)" strokeWidth="1"
-          animate={{ opacity: [0, 0.15, 0] }}
-          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 3 }}
-        />
-      </svg>
+      {/* Layer 2: Subtle grid lines */}
+      <div
+        className="absolute inset-0 opacity-[0.02]"
+        style={{
+          backgroundImage: `
+            linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)
+          `,
+          backgroundSize: '60px 60px',
+        }}
+      />
+
+      {/* Layer 3: Top + bottom vignette for depth */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background: `
+            linear-gradient(180deg, rgba(5,5,5,0.6) 0%, transparent 20%, transparent 80%, rgba(5,5,5,0.8) 100%)
+          `,
+        }}
+      />
     </div>
   );
 }
