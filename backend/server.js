@@ -10,7 +10,9 @@ import jobsRoutes from './routes/jobs.js';
 import industriesRoutes from './routes/industries.js';
 import analyticsRoutes from './routes/analytics.js';
 import webhooksRoutes from './routes/webhooks.js';
+import workflowRoutes from './routes/workflows.js';
 import { initializeDatabase } from './db/schema.js';
+import { startQueueProcessor } from './services/messageQueue.js';
 import { securityHeaders, enforceHttps, sanitizeInput } from './middleware/security.js';
 
 dotenv.config();
@@ -76,6 +78,7 @@ app.use('/api/jobs', jobsRoutes);
 app.use('/api/industries', industriesRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/webhooks', webhooksRoutes);
+app.use('/api/workflows', workflowRoutes);
 
 // 404 handler
 app.use((req, res) => {
@@ -99,6 +102,10 @@ if (!isVercel) {
 
       await initializeDatabase();
       console.log('Database schema initialized');
+
+      // Start the message queue processor (polls every 30s)
+      startQueueProcessor(30000);
+      console.log('Message queue processor started');
 
       app.listen(PORT, () => {
         console.log(`Server running on http://localhost:${PORT}`);
