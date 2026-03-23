@@ -3,12 +3,18 @@ import { motion } from 'framer-motion';
 import { Sparkles, Menu, X } from 'lucide-react';
 import CursorFollower from './components/ui/cursor-follower';
 import { GlobalBackground } from './components/ui/GlobalBackground';
-import { HeroSection } from './components/ui/flow-field-demo';
+import { SplineHeroSection } from './components/sections/SplineHeroSection';
+import { ScrollDashboardDemo } from './components/sections/ScrollDashboardDemo';
+import { NavigationDock } from './components/sections/NavigationDock';
+import { SocialProofBar } from './components/sections/SocialProofBar';
 import { FeaturesSection } from './components/sections/FeaturesSection';
-import { HowItWorksSection } from './components/sections/HowItWorksSection';
 import { DashboardSection } from './components/sections/DashboardSection';
+import { IndustriesSection } from './components/sections/IndustriesSection';
+import { HowItWorksSection } from './components/sections/HowItWorksSection';
+import { IntegrationsSection } from './components/sections/IntegrationsSection';
 import { PricingSection } from './components/sections/PricingSection';
 import { TestimonialsSection } from './components/sections/TestimonialsSection';
+import { FAQSection } from './components/sections/FAQSection';
 import { CTASection } from './components/sections/CTASection';
 import { Footer } from './components/sections/Footer';
 
@@ -30,16 +36,22 @@ function App() {
 
         {/* Main content */}
         <main>
-          <HeroSection />
+          <SplineHeroSection />
+          <SocialProofBar />
+          <ScrollDashboardDemo />
           <DashboardSection />
           <FeaturesSection />
+          <IndustriesSection />
           <HowItWorksSection />
+          <IntegrationsSection />
           <PricingSection />
           <TestimonialsSection />
+          <FAQSection />
           <CTASection />
         </main>
 
         <Footer />
+        <NavigationDock />
       </div>
     </div>
   );
@@ -81,7 +93,7 @@ function GlassNavigation({ mobileMenuOpen, setMobileMenuOpen }) {
 
             {/* Desktop nav */}
             <div className="hidden md:flex items-center gap-8">
-              {["Features", "How It Works", "Pricing"].map((item) => (
+              {["Features", "Industries", "How It Works", "Pricing", "FAQ"].map((item) => (
                 <a
                   key={item}
                   href={`#${item.toLowerCase().replace(/\s+/g, "-")}`}
@@ -124,7 +136,7 @@ function GlassNavigation({ mobileMenuOpen, setMobileMenuOpen }) {
             animate={{ opacity: 1, y: 0 }}
             className="md:hidden mt-2 backdrop-blur-xl bg-black/80 border border-cyan-500/20 rounded-2xl px-6 py-6 space-y-4"
           >
-            {["Features", "How It Works", "Pricing"].map((item) => (
+            {["Features", "Industries", "How It Works", "Pricing", "FAQ"].map((item) => (
               <a
                 key={item}
                 href={`#${item.toLowerCase().replace(/\s+/g, "-")}`}

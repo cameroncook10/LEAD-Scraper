@@ -27,12 +27,12 @@ export const ContainerScroll = ({
   }, []);
 
   const scaleDimensions = () => {
-    return isMobile ? [0.7, 0.9] : [1.05, 1];
+    return isMobile ? [0.8, 1] : [1.05, 1];
   };
 
   const rotate = useTransform(scrollYProgress, [0, 1], [20, 0]);
   const scale = useTransform(scrollYProgress, [0, 1], scaleDimensions());
-  const translate = useTransform(scrollYProgress, [0, 1], [0, -100]);
+  const translate = useTransform(scrollYProgress, [0, 1], [0, -50]);
 
   return (
     <div
@@ -60,7 +60,7 @@ export const Header = ({ translate, titleComponent }: any) => {
       style={{
         translateY: translate,
       }}
-      className="div max-w-5xl mx-auto text-center"
+      className="max-w-5xl mx-auto text-center relative z-20"
     >
       {titleComponent}
     </motion.div>
@@ -83,11 +83,12 @@ export const Card = ({
         rotateX: rotate,
         scale,
         boxShadow:
-          "0 0 #0000004d, 0 9px 20px #0000004a, 0 37px 37px #00000042, 0 84px 50px #00000026, 0 149px 60px #0000000a, 0 233px 65px #00000003",
+          "0 0 0 1px rgba(6, 182, 212, 0.2), 0 0 40px rgba(6, 182, 212, 0.1), 0 37px 37px rgba(0,0,0,0.4), 0 84px 50px rgba(0,0,0,0.2)",
       }}
-      className="max-w-5xl -mt-12 mx-auto h-[30rem] md:h-[40rem] w-full border-2 border-cyan-500/20 p-2 md:p-6 bg-gray-900 rounded-[30px] shadow-2xl"
+      className="max-w-5xl -mt-12 mx-auto h-[30rem] md:h-[40rem] w-full p-2 md:p-6 bg-black/40 backdrop-blur-xl rounded-[30px] border border-cyan-500/30 shadow-2xl relative z-10"
     >
-      <div className="h-full w-full overflow-hidden rounded-2xl bg-gray-950 md:rounded-2xl md:p-4">
+      <div className="h-full w-full overflow-hidden rounded-2xl bg-black/60 relative border border-white/5">
+        <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 to-blue-500/10 z-0 pointer-events-none" />
         {children}
       </div>
     </motion.div>

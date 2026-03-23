@@ -7,6 +7,9 @@ import { dirname } from 'path';
 import scrapeRoutes from './routes/scrape.js';
 import leadsRoutes from './routes/leads.js';
 import jobsRoutes from './routes/jobs.js';
+import industriesRoutes from './routes/industries.js';
+import analyticsRoutes from './routes/analytics.js';
+import webhooksRoutes from './routes/webhooks.js';
 import { initializeDatabase } from './db/schema.js';
 import { securityHeaders, enforceHttps, sanitizeInput } from './middleware/security.js';
 
@@ -70,6 +73,9 @@ app.get('/health', (req, res) => {
 app.use('/api/scrape', scrapeRoutes);
 app.use('/api/leads', leadsRoutes);
 app.use('/api/jobs', jobsRoutes);
+app.use('/api/industries', industriesRoutes);
+app.use('/api/analytics', analyticsRoutes);
+app.use('/api/webhooks', webhooksRoutes);
 
 // 404 handler
 app.use((req, res) => {
