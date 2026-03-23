@@ -1,0 +1,26 @@
+{
+  "name": "lead-scraper-mvp",
+  "version": "1.0.0",
+  "description": "Lead scraping MVP with AI qualification",
+  "type": "module",
+  "main": "backend/server.js",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd backend && node --watch server.js",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build:frontend": "cd frontend && npm run build",
+    "start:backend": "cd backend && node server.js",
+    "start:frontend": "cd frontend && npm run preview",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "lead-scraping",
+    "ai-qualification",
+    "full-stack"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
