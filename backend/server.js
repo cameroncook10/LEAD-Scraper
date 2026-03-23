@@ -8,6 +8,7 @@ import scrapeRoutes from './routes/scrape.js';
 import leadsRoutes from './routes/leads.js';
 import jobsRoutes from './routes/jobs.js';
 import { initializeDatabase } from './db/schema.js';
+import { securityHeaders, enforceHttps, sanitizeInput } from './middleware/security.js';
 
 dotenv.config();
 
@@ -17,10 +18,25 @@ const __dirname = dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3002;
 
-// Middleware
-app.use(cors());
+// Security middleware
+app.use(securityHeaders);
+app.use(enforceHttps);
+
+// CORS configuration
+app.use(cors({
+  origin: process.env.ALLOWED_ORIGINS?.split(',') || '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+  maxAge: 86400
+}));
+
+// Body parsing
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
+
+// Sanitize all inputs
+app.use(sanitizeInput);
 
 // Global error handler
 app.use((err, req, res, next) => {
@@ -42,7 +58,12 @@ app.locals.supabase = supabase;
 
 // Health check
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    encryption: !!process.env.ENCRYPTION_KEY,
+    version: '2.0.0'
+  });
 });
 
 // Routes
@@ -55,22 +76,33 @@ app.use((req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
-// Start server
-const startServer = async () => {
-  try {
-    // Initialize database schema
-    await initializeDatabase();
-    console.log('✓ Database schema initialized');
+// Export app for Vercel serverless
+export default app;
 
-    app.listen(PORT, () => {
-      console.log(`🚀 Server running on http://localhost:${PORT}`);
-      console.log(`   Frontend: http://localhost:3001`);
-      console.log(`   Health: http://localhost:${PORT}/health`);
-    });
-  } catch (error) {
-    console.error('Failed to start server:', error);
-    process.exit(1);
-  }
-};
+// Start server only when running directly (not imported by Vercel)
+const isVercel = process.env.VERCEL === '1';
 
-startServer();
+if (!isVercel) {
+  const startServer = async () => {
+    try {
+      if (!process.env.ENCRYPTION_KEY) {
+        console.warn('WARNING: ENCRYPTION_KEY not set. Field-level encryption is disabled.');
+      } else {
+        console.log('AES-256-GCM encryption enabled');
+      }
+
+      await initializeDatabase();
+      console.log('Database schema initialized');
+
+      app.listen(PORT, () => {
+        console.log(`Server running on http://localhost:${PORT}`);
+        console.log(`Health: http://localhost:${PORT}/health`);
+      });
+    } catch (error) {
+      console.error('Failed to start server:', error);
+      process.exit(1);
+    }
+  };
+
+  startServer();
+}

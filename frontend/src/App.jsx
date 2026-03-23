@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import Dashboard from './pages/Dashboard';
 import JobMonitor from './pages/JobMonitor';
 import LeadsView from './pages/LeadsView';
+import { LampDemo } from './components/ui/lamp-demo';
+import { NeuralHeroDemo } from './components/ui/flow-field-demo';
 
 function App() {
-  const [currentPage, setCurrentPage] = useState('dashboard');
+  const [currentPage, setCurrentPage] = useState('home');
   const [jobRefresh, setJobRefresh] = useState(0);
 
   const handleJobCreated = () => {
@@ -23,6 +25,16 @@ function App() {
               <p className="text-sm text-gray-500 mt-1">AI-powered lead qualification system</p>
             </div>
             <nav className="flex space-x-4">
+              <button
+                onClick={() => setCurrentPage('home')}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  currentPage === 'home'
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                Home
+              </button>
               <button
                 onClick={() => setCurrentPage('dashboard')}
                 className={`px-4 py-2 rounded-lg font-medium transition-colors ${
@@ -59,10 +71,30 @@ function App() {
       </header>
 
       {/* Main content */}
-      <main className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        {currentPage === 'dashboard' && <Dashboard onJobCreated={handleJobCreated} />}
-        {currentPage === 'jobs' && <JobMonitor key={jobRefresh} />}
-        {currentPage === 'leads' && <LeadsView />}
+      <main className="w-full flex-1">
+        {currentPage === 'home' && (
+          <div className="w-full flex flex-col bg-slate-950 overflow-x-hidden">
+            <NeuralHeroDemo />
+            <div className="w-full min-h-[500px] flex items-center justify-center -mt-20 z-10 relative">
+              <LampDemo />
+            </div>
+          </div>
+        )}
+        {currentPage === 'dashboard' && (
+          <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+            <Dashboard onJobCreated={handleJobCreated} />
+          </div>
+        )}
+        {currentPage === 'jobs' && (
+          <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+            <JobMonitor key={jobRefresh} />
+          </div>
+        )}
+        {currentPage === 'leads' && (
+          <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+            <LeadsView />
+          </div>
+        )}
       </main>
 
       {/* Footer */}

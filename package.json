@@ -1,22 +1,29 @@
 {
   "name": "lead-scraper-mvp",
-  "version": "1.0.0",
-  "description": "Lead scraping MVP with AI qualification",
+  "version": "2.0.0",
+  "description": "Lead scraping MVP with AI qualification - Web + Mobile",
   "type": "module",
   "main": "backend/server.js",
   "scripts": {
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
     "dev:backend": "cd backend && node --watch server.js",
     "dev:frontend": "cd frontend && npm run dev",
+    "dev:mobile": "cd mobile && npx expo start",
+    "dev:all": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\" \"npm run dev:mobile\"",
+    "build": "cd frontend && npm install && npm run build",
     "build:frontend": "cd frontend && npm run build",
+    "vercel-build": "cd frontend && npm install && npm run build",
     "start:backend": "cd backend && node server.js",
     "start:frontend": "cd frontend && npm run preview",
+    "install:mobile": "cd mobile && npm install",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
     "lead-scraping",
     "ai-qualification",
-    "full-stack"
+    "full-stack",
+    "react-native",
+    "expo"
   ],
   "author": "",
   "license": "MIT",
