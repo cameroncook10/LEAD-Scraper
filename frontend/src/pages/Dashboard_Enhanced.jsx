@@ -15,12 +15,12 @@ const chartData = {
 };
 
 const mockLeads = [
-  { id: 1, name: "Johnson HVAC", location: "Phoenix, AZ", score: "94", status: "Hot", industry: "Services" },
-  { id: 2, name: "Prime Landscaping", location: "Charlotte, NC", score: "87", status: "Warm", industry: "Services" },
-  { id: 3, name: "Elite Plumbing", location: "Richmond, VA", score: "91", status: "Hot", industry: "Contractor" },
-  { id: 4, name: "Shango Roofing", location: "Richmond, VA", score: "96", status: "Hot", industry: "Contractor" },
-  { id: 5, name: "TechFlow Solutions", location: "Austin, TX", score: "45", status: "Cold", industry: "Software" },
-  { id: 6, name: "Apex Builders", location: "Miami, FL", score: "62", status: "Cold", industry: "Contractor" },
+  { id: 1, name: "Johnson HVAC", location: "Phoenix, AZ", score: "94", status: "Hot", industry: "Services", description: "Established cooling and heating residential company. Seeking commercial contracts and B2B partnerships for bulk AC units." },
+  { id: 2, name: "Prime Landscaping", location: "Charlotte, NC", score: "87", status: "Warm", industry: "Services", description: "High-end landscaping and yard design. Looking for enterprise corporate campuses and real estate developers." },
+  { id: 3, name: "Elite Plumbing", location: "Richmond, VA", score: "91", status: "Hot", industry: "Contractor", description: "24/7 emergency pipe repair. High volume of search intent. Open to SaaS dispatch software." },
+  { id: 4, name: "Shango Roofing", location: "Richmond, VA", score: "96", status: "Hot", industry: "Contractor", description: "Top-rated commercial roofing. 20+ trucks. Prime target for fleet tracking tools and CRM solutions." },
+  { id: 5, name: "TechFlow Solutions", location: "Austin, TX", score: "45", status: "Cold", industry: "Software", description: "Small IT managed services provider. Listed needing cybersecurity updates and compliance audits." },
+  { id: 6, name: "Apex Builders", location: "Miami, FL", score: "62", status: "Cold", industry: "Contractor", description: "General contractor for residential homes. Heavy usage of legacy tools, massive opportunity for digitalization." },
 ];
 
 function DashboardEnhanced() {
@@ -89,8 +89,10 @@ function DashboardEnhanced() {
   const activeChartData = chartData[timeFilter];
   
   const filteredLeads = mockLeads.filter(lead => {
-    const matchesSearch = lead.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          lead.industry.toLowerCase().includes(searchQuery.toLowerCase());
+    const searchLower = searchQuery.toLowerCase();
+    const matchesSearch = lead.name.toLowerCase().includes(searchLower) || 
+                          lead.industry.toLowerCase().includes(searchLower) ||
+                          (lead.description && lead.description.toLowerCase().includes(searchLower));
     const matchesStatus = leadFilter === 'All' || lead.status === leadFilter;
     return matchesSearch && matchesStatus;
   });
@@ -263,6 +265,7 @@ function DashboardEnhanced() {
                   <thead className="bg-slate-800/80 text-slate-400">
                     <tr>
                       <th className="px-6 py-4 font-medium">Company Name</th>
+                      <th className="px-6 py-4 font-medium">Keywords / Description</th>
                       <th className="px-6 py-4 font-medium">Location</th>
                       <th className="px-6 py-4 font-medium">Industry</th>
                       <th className="px-6 py-4 font-medium">AI Score</th>
@@ -273,6 +276,7 @@ function DashboardEnhanced() {
                     {filteredLeads.map(lead => (
                       <tr key={lead.id} className="border-t border-slate-800 hover:bg-slate-800/30 transition cursor-pointer">
                         <td className="px-6 py-4 font-bold text-white">{lead.name}</td>
+                        <td className="px-6 py-4 text-slate-400 text-xs w-1/3 pr-8">{lead.description}</td>
                         <td className="px-6 py-4 text-slate-400">{lead.location}</td>
                         <td className="px-6 py-4 text-slate-400">{lead.industry}</td>
                         <td className="px-6 py-4 font-mono text-cyan-400">{lead.score}%</td>
