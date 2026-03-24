@@ -1,0 +1,7 @@
+
+> lead-scraper-frontend@1.0.0 dev
+> vite
+
+[31merror when starting dev server:
+Error: HTTP server not available
+    at CAC.<anonymous> (file:///C:/Users/Cameron%20Cook/OneDrive/Desktop/Leadscraper/LEAD-Scraper/frontend/node_modules/vite/dist/node/cli.js:747:13)[39m

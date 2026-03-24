@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Check, Sparkles } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const plans = [
   {
@@ -67,6 +68,7 @@ const plans = [
 ];
 
 export function PricingSection() {
+  const navigate = useNavigate();
   const [isAnnual, setIsAnnual] = useState(false);
 
   return (
@@ -149,6 +151,7 @@ export function PricingSection() {
               </div>
 
               <button
+                onClick={() => navigate('/dashboard')}
                 className={`w-full py-3 rounded-xl font-semibold text-sm transition-all duration-300 mb-7 ${
                   plan.featured
                     ? "bg-gradient-to-r from-cyan-500 to-blue-500 text-white hover:shadow-lg hover:shadow-cyan-500/25"

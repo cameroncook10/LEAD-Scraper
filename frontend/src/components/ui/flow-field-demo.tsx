@@ -3,8 +3,10 @@ import { motion } from "framer-motion";
 import { ArrowRight, Play, Zap } from "lucide-react";
 import { AnimatedBackground } from "@/components/ui/AnimatedBackground";
 import NeuralBackground from "@/components/ui/flow-field-background";
+import { useNavigate } from "react-router-dom";
 
 export function HeroSection() {
+  const navigate = useNavigate();
   return (
     <section className="relative min-h-screen flex items-center justify-center pt-24 px-6 overflow-hidden">
       {/* Layer 1: particle flow-field (existing) */}
@@ -81,6 +83,7 @@ export function HeroSection() {
           className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12"
         >
           <motion.button
+            onClick={() => navigate('/dashboard')}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             className="group relative bg-cyan-500 hover:bg-cyan-400 text-gray-950 px-8 py-4 rounded-xl font-bold text-lg transition-all overflow-hidden shadow-2xl shadow-cyan-500/30"

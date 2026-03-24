@@ -10,7 +10,6 @@ export default defineConfig({
     },
   },
   server: {
-    middlewareMode: true,
     port: 3001,
     host: true,
     proxy: {

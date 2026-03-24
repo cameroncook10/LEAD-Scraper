@@ -1,8 +1,10 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export function CTASection() {
+  const navigate = useNavigate();
   return (
     <section className="py-28 px-6 relative overflow-hidden">
       <div className="max-w-4xl mx-auto relative">
@@ -39,6 +41,7 @@ export function CTASection() {
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <motion.button
+                onClick={() => navigate('/dashboard')}
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
                 className="btn-primary px-10 py-4 text-base rounded-xl"
