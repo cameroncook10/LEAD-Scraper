@@ -17,7 +17,7 @@ const faqs = [
   },
   {
     q: "Can I integrate with my existing CRM?",
-    a: "Absolutely. We offer native integrations with GoHighLevel, HubSpot, Salesforce, and Pipedrive. For other tools, use our Zapier integration or webhooks to connect with 1,000+ apps.",
+    a: "Absolutely. We offer native integrations with GoHighLevel, HubSpot, Salesforce, and Pipedrive. For other tools, use our Zapier integration or webhooks to connect with additional apps.",
   },
   {
     q: "How accurate is the AI lead qualification?",
