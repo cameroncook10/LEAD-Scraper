@@ -5,7 +5,7 @@ import {
   BarChart3, MessageSquare, Briefcase, Bell, Link2, Download,
   Sliders, ArrowLeft
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { startScrape } from '../services/api';
 
 const chartData = {
@@ -25,7 +25,11 @@ const mockLeads = [
 
 function DashboardEnhanced() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('Overview');
+  const [searchParams] = useSearchParams();
+  const tabFromUrl = searchParams.get('tab');
+  const validTabs = ['Overview', 'Leads', 'Targeting', 'Campaigns', 'Inbox', 'Analytics', 'Settings'];
+  const initialTab = validTabs.includes(tabFromUrl) ? tabFromUrl : 'Overview';
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [timeFilter, setTimeFilter] = useState('30D');
   const [searchQuery, setSearchQuery] = useState('');
   const [leadFilter, setLeadFilter] = useState('All');

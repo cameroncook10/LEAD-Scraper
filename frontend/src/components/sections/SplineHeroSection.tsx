@@ -4,8 +4,10 @@ import { LeadScrapingVisual } from "@/components/ui/lead-scraping-visual";
 import { Spotlight } from "@/components/ui/spotlight";
 import { motion } from "framer-motion";
 import { ArrowRight, Play } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export function SplineHeroSection() {
+  const navigate = useNavigate();
   return (
     <section className="relative min-h-screen flex items-center overflow-hidden pt-24 pb-16">
       {/* Top gradient wash */}
@@ -59,6 +61,7 @@ export function SplineHeroSection() {
             {/* CTAs — Dual */}
             <div className="flex flex-wrap gap-4 mb-12">
               <motion.button
+                onClick={() => navigate('/dashboard?tab=Campaigns')}
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
                 className="btn-primary px-8 py-4 text-base rounded-xl"
@@ -67,6 +70,7 @@ export function SplineHeroSection() {
                 <ArrowRight className="w-4 h-4 ml-2" />
               </motion.button>
               <motion.button
+                onClick={() => navigate('/dashboard')}
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
                 className="btn-ghost px-8 py-4 text-base rounded-xl"
