@@ -68,6 +68,8 @@ function DashboardEnhanced() {
   const [connected, setConnected] = useState({ instagram: false, facebook: false, email: false });
   const [savingOutreach, setSavingOutreach] = useState(false);
   const [outreachMsg, setOutreachMsg] = useState(null);
+  const [promoCode, setPromoCode] = useState('');
+  const [promoError, setPromoError] = useState(false);
 
   // Load saved credentials on mount + check OAuth callback params
   useEffect(() => {
@@ -195,9 +197,43 @@ function DashboardEnhanced() {
             >
               View Plans & Start Trial
             </button>
+
+            {/* Promo Code */}
+            <div className="mt-4 pt-4 border-t border-white/[0.06]">
+              <p className="text-xs text-gray-600 mb-2">Have a promo code?</p>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Enter promo code"
+                  value={promoCode}
+                  onChange={e => setPromoCode(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && promoCode.toLowerCase().trim() === 'web') {
+                      setHasSubscription(true);
+                    }
+                  }}
+                  className="flex-1 glass rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/50 border border-white/[0.06] placeholder-gray-600"
+                />
+                <button
+                  onClick={() => {
+                    if (promoCode.toLowerCase().trim() === 'web') {
+                      setHasSubscription(true);
+                    } else {
+                      setPromoError(true);
+                      setTimeout(() => setPromoError(false), 2000);
+                    }
+                  }}
+                  className="px-5 py-2.5 rounded-lg text-sm font-semibold bg-white/5 hover:bg-white/10 text-white border border-white/[0.06] transition"
+                >
+                  Apply
+                </button>
+              </div>
+              {promoError && <p className="text-xs text-red-400 mt-2">Invalid promo code</p>}
+            </div>
+
             <button
               onClick={() => navigate('/')}
-              className="w-full py-3 rounded-xl font-semibold text-sm bg-white/5 hover:bg-white/10 text-gray-400 border border-white/[0.06] transition-all duration-300"
+              className="w-full py-3 rounded-xl font-semibold text-sm bg-white/5 hover:bg-white/10 text-gray-400 border border-white/[0.06] transition-all duration-300 mt-3"
             >
               ← Back to Site
             </button>

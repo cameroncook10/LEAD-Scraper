@@ -82,13 +82,30 @@ export function PricingSection() {
 
     setLoadingPlan(plan.key);
     try {
-      const data = await createStripeCheckout(plan.key, isAnnual);
+      // Call Supabase edge function directly (bypasses backend proxy)
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      const planKey = isAnnual ? `${plan.key}_annual` : plan.key;
+
+      const res = await fetch(`${supabaseUrl}/functions/v1/stripe-checkout`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${supabaseKey}`,
+        },
+        body: JSON.stringify({ plan: planKey }),
+      });
+
+      const data = await res.json();
+
       if (data.url) {
         window.location.href = data.url;
+      } else {
+        throw new Error(data.error || 'No checkout URL returned');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Checkout error:", err);
-      alert("Unable to start checkout. Please try again.");
+      alert(err.message || "Unable to start checkout. Please try again.");
     } finally {
       setLoadingPlan(null);
     }
