@@ -8,7 +8,7 @@ import {
   ChevronDown, ChevronUp, Eye, Terminal
 } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { startScrape, getScrapeStatus, getJobs, getLeads, getLeadsStats, exportLeads, saveOutreachCredentials, loadOutreachCredentials } from '../services/api';
+import { startScrape, getScrapeStatus, getJobs, getLeads, getLeadsStats, exportLeads, saveOutreachCredentials, loadOutreachCredentials, getAnalyticsOverview } from '../services/api';
 import { supabase } from '../lib/supabase';
 
 /* ════════════════════════════════════════════════
@@ -94,7 +94,8 @@ function DashboardEnhanced() {
     { value: 'web_search', label: 'Web Search' },
     { value: 'google_maps', label: 'Google Maps' },
     { value: 'zillow', label: 'Zillow' },
-    { value: 'nextdoor', label: 'Nextdoor' }
+    { value: 'nextdoor', label: 'Local Biz' },
+    { value: 'premium', label: 'Premium' },
   ];
 
   // Fetch jobs list
@@ -119,18 +120,36 @@ function DashboardEnhanced() {
     } finally { setLoadingLeads(false); }
   }, []);
 
-  // Fetch lead stats
+  // Fetch lead stats — uses analytics endpoint for full stats
   const fetchStats = useCallback(async () => {
     try {
-      const data = await getLeadsStats();
+      const data = await getAnalyticsOverview(30);
+      const stats = data.stats || {};
       setLeadStats({
-        total: data.totalLeads || 0,
-        dmsSent: data.dmsSent || 0,
-        emailsSent: data.emailsSent || 0,
-        conversions: data.conversions || 0
+        total: stats.totalLeads || 0,
+        dmsSent: stats.dmsSent || 0,
+        emailsSent: stats.emailsSent || 0,
+        conversions: stats.conversions || 0,
+        hotLeads: stats.hotLeads || 0,
+        warmLeads: stats.warmLeads || 0,
+        avgScore: stats.avgLeadScore || 0,
       });
     } catch (err) {
-      console.error('Failed to fetch stats:', err);
+      // Fallback to basic leads stats
+      try {
+        const data = await getLeadsStats();
+        setLeadStats({
+          total: data.totalLeads || 0,
+          dmsSent: 0,
+          emailsSent: 0,
+          conversions: 0,
+          hotLeads: data.scoreDistribution?.hot || 0,
+          warmLeads: data.scoreDistribution?.warm || 0,
+          avgScore: parseFloat(data.averageScore) || 0,
+        });
+      } catch (e) {
+        console.error('Failed to fetch stats:', e);
+      }
     }
   }, []);
 
@@ -602,8 +621,8 @@ function DashboardEnhanced() {
                     </thead>
                     <tbody>
                       {filteredLeads.map(lead => {
-                        const score = Math.round((lead.quality_score || 0) * 100);
-                        const status = getLeadStatus(lead.quality_score || 0);
+                        const score = lead.ai_score || 0;
+                        const status = getLeadStatus(score);
                         return (
                           <tr key={lead.id} className="border-b border-white/[0.04] hover:bg-white/[0.02] transition cursor-pointer">
                             <td className="px-6 py-4 font-semibold text-white">{lead.name}</td>
@@ -1120,6 +1139,73 @@ function DashboardEnhanced() {
                   className={`mt-6 px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${savingOutreach ? 'bg-white/5 text-gray-500 cursor-not-allowed' : 'btn-primary shadow-lg shadow-cyan-500/20'}`}>
                   {savingOutreach ? 'Saving...' : 'Save Outreach Settings'}
                 </button>
+              </Card>
+
+              {/* API Keys */}
+              <Card className="!p-8" mesh="mesh-blue">
+                <h3 className="text-lg font-semibold text-white mb-2 pb-4 border-b border-white/[0.06]">
+                  <span className="gradient-text-cyan">API</span> Keys
+                </h3>
+                <p className="text-gray-500 text-sm mb-6">
+                  Configure API keys for premium features. Keys are stored securely in Supabase.
+                </p>
+                <div className="space-y-3">
+                  {[
+                    { id: 'serpapi', label: 'SerpAPI Key', desc: 'Premium scraping (Google Maps, Yelp, Google Search)', placeholder: 'Your SerpAPI key' },
+                    { id: 'google_places', label: 'Google Places API Key', desc: 'Direct Google Maps business data', placeholder: 'AIza...' },
+                  ].map(apiKey => (
+                    <div key={apiKey.id} className="glass-liquid rounded-xl p-5">
+                      <div className="flex items-center justify-between mb-2">
+                        <div>
+                          <div className="font-semibold text-white text-sm">{apiKey.label}</div>
+                          <div className="text-xs text-gray-500">{apiKey.desc}</div>
+                        </div>
+                        <Globe className="w-5 h-5 text-cyan-400/40" />
+                      </div>
+                      <input
+                        type="password"
+                        placeholder={apiKey.placeholder}
+                        className="w-full glass rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/50 border border-white/[0.06] placeholder-gray-600 mt-2"
+                        onBlur={async (e) => {
+                          if (e.target.value) {
+                            try {
+                              const { storeApiKey } = await import('../services/api');
+                              await storeApiKey(apiKey.id, e.target.value);
+                            } catch (err) {
+                              console.error('Failed to save API key:', err);
+                            }
+                          }
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-gray-600 mt-4">
+                  Note: AI keys (Anthropic, Gemini) and Stripe keys are set as Supabase secrets via CLI.
+                </p>
+              </Card>
+
+              {/* Notification Settings */}
+              <Card className="!p-8">
+                <h3 className="text-lg font-semibold text-white mb-6 pb-4 border-b border-white/[0.06]">Notifications</h3>
+                <div className="space-y-4">
+                  {[
+                    { key: 'weeklyReport', title: 'Weekly Report', desc: 'Get a weekly summary of leads and campaign performance.' },
+                  ].map((setting) => (
+                    <div key={setting.key} className="flex items-center justify-between p-5 glass-liquid rounded-xl">
+                      <div>
+                        <div className="font-semibold text-white mb-1">{setting.title}</div>
+                        <div className="text-sm text-gray-500">{setting.desc}</div>
+                      </div>
+                      <button
+                        onClick={() => setSettings(s => ({ ...s, [setting.key]: !s[setting.key] }))}
+                        className={`relative w-12 h-6 rounded-full transition-all duration-300 ${settings[setting.key] ? 'bg-gradient-to-r from-cyan-500 to-blue-500 shadow-lg shadow-cyan-500/30' : 'bg-white/10'}`}
+                      >
+                        <div className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform duration-300 shadow-md ${settings[setting.key] ? 'translate-x-6' : 'translate-x-0'}`} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </Card>
             </div>
           )}

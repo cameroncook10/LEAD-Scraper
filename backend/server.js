@@ -15,6 +15,9 @@ import socialAuthRoutes from './routes/socialAuth.js';
 import outreachRoutes from './routes/outreach.js';
 import outreachCredentialsRoutes from './routes/outreachCredentials.js';
 import stripeRoutes from './routes/stripe.js';
+import campaignsRoutes from './routes/campaigns.js';
+import templatesRoutes from './routes/templates.js';
+import apiKeysRoutes from './routes/apiKeys.js';
 import { initializeDatabase } from './db/schema.js';
 import { startQueueProcessor } from './services/messageQueue.js';
 import { securityHeaders, enforceHttps, sanitizeInput } from './middleware/security.js';
@@ -47,15 +50,6 @@ app.use(express.urlencoded({ limit: '10mb', extended: true }));
 // Sanitize all inputs
 app.use(sanitizeInput);
 
-// Global error handler
-app.use((err, req, res, next) => {
-  console.error('Error:', err);
-  res.status(err.status || 500).json({
-    error: err.message || 'Internal server error',
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
-  });
-});
-
 // Initialize Supabase client
 export const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -87,10 +81,22 @@ app.use('/api/auth', socialAuthRoutes);
 app.use('/api/outreach', outreachRoutes);
 app.use('/api/outreach-credentials', outreachCredentialsRoutes);
 app.use('/api/stripe', stripeRoutes);
+app.use('/api/campaigns', campaignsRoutes);
+app.use('/api/templates', templatesRoutes);
+app.use('/api/api-keys', apiKeysRoutes);
 
 // 404 handler
 app.use((req, res) => {
   res.status(404).json({ error: 'Route not found' });
+});
+
+// Global error handler (must be after all routes)
+app.use((err, req, res, next) => {
+  console.error('Error:', err);
+  res.status(err.status || 500).json({
+    error: err.message || 'Internal server error',
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+  });
 });
 
 // Export app for Vercel serverless

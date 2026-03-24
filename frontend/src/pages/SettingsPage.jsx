@@ -8,7 +8,7 @@ import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import { Instagram, Facebook, CheckCircle2, XCircle, ExternalLink, Loader2 } from 'lucide-react';
 
-const API_BASE = 'http://localhost:3002';
+const API_BASE = import.meta.env.VITE_API_URL || '/api/..';
 
 const PROVIDERS = [
   {

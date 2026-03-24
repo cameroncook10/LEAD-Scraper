@@ -3,16 +3,32 @@ import twilio from 'twilio';
 /**
  * SMS and WhatsApp Service
  * Uses Twilio for SMS and WhatsApp delivery
+ * Lazily initializes the client so the app doesn't crash without credentials.
  */
 
-const client = new twilio(
-  process.env.TWILIO_ACCOUNT_SID,
-  process.env.TWILIO_AUTH_TOKEN
-);
+let _client = null;
 
-const accountSid = process.env.TWILIO_ACCOUNT_SID;
-const fromNumber = process.env.TWILIO_PHONE_NUMBER;
-const whatsappNumber = `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER || fromNumber}`;
+function getClient() {
+  if (!_client) {
+    const sid = process.env.TWILIO_ACCOUNT_SID;
+    const token = process.env.TWILIO_AUTH_TOKEN;
+    if (!sid || !token) {
+      throw new Error('Twilio not configured. Set TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN in .env');
+    }
+    _client = new twilio(sid, token);
+  }
+  return _client;
+}
+
+function getFromNumber() {
+  const num = process.env.TWILIO_PHONE_NUMBER;
+  if (!num) throw new Error('TWILIO_PHONE_NUMBER not set in .env');
+  return num;
+}
+
+function getWhatsappNumber() {
+  return `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER || getFromNumber()}`;
+}
 
 /**
  * Send SMS message
@@ -31,9 +47,9 @@ export const smsService = {
     }
 
     try {
-      const message = await client.messages.create({
+      const message = await getClient().messages.create({
         body: body.substring(0, 160), // SMS limit
-        from: fromNumber,
+        from: getFromNumber(),
         to: this.normalizePhoneNumber(to),
         statusCallback: `${process.env.BACKEND_URL}/api/webhooks/sms-status?tracking_id=${trackingId}`
       });
@@ -65,8 +81,8 @@ export const smsService = {
     }
 
     try {
-      const message = await client.messages.create({
-        from: whatsappNumber,
+      const message = await getClient().messages.create({
+        from: getWhatsappNumber(),
         body,
         to: `whatsapp:${this.normalizePhoneNumber(to)}`,
         statusCallback: `${process.env.BACKEND_URL}/api/webhooks/whatsapp-status?tracking_id=${trackingId}`
@@ -88,7 +104,7 @@ export const smsService = {
 
   async getMessageStatus(messageSid) {
     try {
-      const message = await client.messages(messageSid).fetch();
+      const message = await getClient().messages(messageSid).fetch();
       return {
         sid: message.sid,
         status: message.status,

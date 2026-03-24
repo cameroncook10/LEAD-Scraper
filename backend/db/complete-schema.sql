@@ -133,6 +133,25 @@ CREATE TABLE IF NOT EXISTS unsubscribes (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 
+-- ── Outreach Credentials (per-user DM/Email tokens) ────────
+
+CREATE TABLE IF NOT EXISTS outreach_credentials (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id TEXT UNIQUE NOT NULL DEFAULT 'default',
+  ig_access_token TEXT DEFAULT '',
+  ig_business_id TEXT DEFAULT '',
+  fb_page_id TEXT DEFAULT '',
+  fb_page_token TEXT DEFAULT '',
+  smtp_host TEXT DEFAULT '',
+  smtp_port INTEGER DEFAULT 587,
+  smtp_user TEXT DEFAULT '',
+  smtp_pass TEXT DEFAULT '',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_outreach_credentials_user ON outreach_credentials(user_id);
+
 -- ── API Keys (for Edge Function) ────────────────────────────
 
 CREATE TABLE IF NOT EXISTS api_keys (

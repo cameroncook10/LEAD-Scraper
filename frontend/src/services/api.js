@@ -83,4 +83,58 @@ export const createStripePortal = async (sessionId) => {
   return response.data;
 };
 
+// API Key management
+export const storeApiKey = async (provider, key) => {
+  const response = await api.post('/api-keys', { provider, key });
+  return response.data;
+};
+
+export const listApiKeys = async () => {
+  const response = await api.get('/api-keys');
+  return response.data;
+};
+
+export const deleteApiKey = async (provider) => {
+  const response = await api.delete(`/api-keys/${provider}`);
+  return response.data;
+};
+
+// Analytics
+export const getAnalyticsOverview = async (days = 30) => {
+  const response = await api.get('/analytics/overview', { params: { days } });
+  return response.data;
+};
+
+export const getAnalyticsTimeline = async (days = 30) => {
+  const response = await api.get('/analytics/timeline', { params: { days } });
+  return response.data;
+};
+
+// Campaigns
+export const getCampaigns = async () => {
+  const response = await api.get('/campaigns');
+  return response.data;
+};
+
+export const createCampaign = async (data) => {
+  const response = await api.post('/campaigns', data);
+  return response.data;
+};
+
+export const sendCampaign = async (campaignId) => {
+  const response = await api.post(`/campaigns/${campaignId}/send`);
+  return response.data;
+};
+
+// Templates
+export const getTemplates = async () => {
+  const response = await api.get('/templates');
+  return response.data;
+};
+
+export const createTemplate = async (data) => {
+  const response = await api.post('/templates', data);
+  return response.data;
+};
+
 export default api;

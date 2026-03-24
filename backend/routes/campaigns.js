@@ -1,7 +1,7 @@
 import express from 'express';
 import { supabase } from '../server.js';
 import { requireAuth } from '../middleware/auth.js';
-import { validate, schemas } from '../utils/validation.js';
+import { validate, schemas } from '../middleware/validation.js';
 import { auditLog } from '../utils/auditLog.js';
 import { emailLimiter, campaignLimiter } from '../middleware/rateLimiter.js';
 import { enqueueEmailCampaign, enqueueSMSCampaign } from '../services/messageQueue.js';

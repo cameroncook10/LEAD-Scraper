@@ -284,4 +284,104 @@ router.get('/status', async (req, res) => {
   }
 });
 
+// GET /api/auth/connections — structured connection list (used by SettingsPage)
+router.get('/connections', async (req, res) => {
+  try {
+    const supabase = req.app.locals.supabase;
+    // Try to get userId from auth header, fall back to query param or 'default'
+    let userId = req.query.userId || 'default';
+    const authHeader = req.headers.authorization;
+    if (authHeader) {
+      try {
+        const token = authHeader.split(' ')[1];
+        const { data: { user } } = await supabase.auth.getUser(token);
+        if (user) userId = user.id;
+      } catch { /* use fallback */ }
+    }
+
+    const { data, error } = await supabase
+      .from('outreach_credentials')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+
+    if (error && error.code !== 'PGRST116') throw error;
+
+    const connections = [];
+    if (data?.ig_access_token) {
+      connections.push({
+        provider: 'instagram',
+        businessId: data.ig_business_id || '',
+        connectedAt: data.updated_at,
+      });
+    }
+    if (data?.fb_page_token) {
+      connections.push({
+        provider: 'facebook',
+        pageId: data.fb_page_id || '',
+        connectedAt: data.updated_at,
+      });
+    }
+    if (data?.smtp_user) {
+      connections.push({
+        provider: 'email',
+        email: data.smtp_user,
+        connectedAt: data.updated_at,
+      });
+    }
+
+    res.json({ connections });
+  } catch (error) {
+    console.error('[Auth] Connections error:', error);
+    res.json({ connections: [] });
+  }
+});
+
+// DELETE /api/auth/disconnect/:provider — disconnect a provider
+router.delete('/disconnect/:provider', async (req, res) => {
+  try {
+    const supabase = req.app.locals.supabase;
+    const { provider } = req.params;
+    let userId = req.query.userId || 'default';
+    const authHeader = req.headers.authorization;
+    if (authHeader) {
+      try {
+        const token = authHeader.split(' ')[1];
+        const { data: { user } } = await supabase.auth.getUser(token);
+        if (user) userId = user.id;
+      } catch { /* use fallback */ }
+    }
+
+    const updates = {};
+    if (provider === 'instagram') {
+      updates.ig_access_token = '';
+      updates.ig_business_id = '';
+    } else if (provider === 'facebook') {
+      updates.fb_page_id = '';
+      updates.fb_page_token = '';
+    } else if (provider === 'email' || provider === 'google') {
+      updates.smtp_host = '';
+      updates.smtp_user = '';
+      updates.smtp_pass = '';
+    } else {
+      return res.status(400).json({ error: `Unknown provider: ${provider}` });
+    }
+
+    updates.updated_at = new Date().toISOString();
+
+    const { error } = await supabase
+      .from('outreach_credentials')
+      .update(updates)
+      .eq('user_id', userId);
+
+    if (error) throw error;
+
+    console.log(`[OAuth] Disconnected ${provider} for user ${userId}`);
+    res.json({ success: true, message: `${provider} disconnected` });
+  } catch (error) {
+    console.error('[Auth] Disconnect error:', error);
+    res.status(500).json({ error: 'Failed to disconnect provider' });
+  }
+});
+
 export default router;

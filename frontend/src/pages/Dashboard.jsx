@@ -13,7 +13,8 @@ function Dashboard({ onJobCreated }) {
     { value: 'web_search', label: 'Web Search' },
     { value: 'google_maps', label: 'Google Maps' },
     { value: 'zillow', label: 'Zillow' },
-    { value: 'nextdoor', label: 'Nextdoor' }
+    { value: 'nextdoor', label: 'Local Biz' },
+    { value: 'premium', label: 'Premium' },
   ];
 
   const handleSubmit = async (e) => {
