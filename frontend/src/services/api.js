@@ -9,6 +9,20 @@ export const api = axios.create({
   }
 });
 
+// Error interceptor for better debugging
+api.interceptors.response.use(
+  response => response,
+  error => {
+    console.error('API Error:', {
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message,
+      url: error.config?.url
+    });
+    return Promise.reject(error);
+  }
+);
+
 // Scrape endpoints
 export const startScrape = async (source, query, limit = 100) => {
   const response = await api.post('/scrape/start', { source, query, limit });
