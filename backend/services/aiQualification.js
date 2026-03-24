@@ -1,52 +1,24 @@
-import Anthropic from '@anthropic-ai/sdk';
+import { createClient } from '@supabase/supabase-js';
 
-const client = new Anthropic();
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_ANON_KEY
+);
 
 export const qualifyLead = async (leadData) => {
   try {
-    const prompt = `You are a lead qualification expert. Analyze this lead data and provide a structured JSON response.
-
-Lead Data:
-${JSON.stringify(leadData, null, 2)}
-
-Provide your analysis in this exact JSON format (no markdown, just JSON):
-{
-  "score": <number 0-100>,
-  "category": "<string: 'hot', 'warm', 'cold', 'invalid'>",
-  "confidence": <number 0-1>,
-  "reasoning": "<brief explanation of score>"
-}
-
-Score: 80-100 = hot lead, 50-79 = warm lead, 20-49 = cold lead, 0-19 = invalid
-Category: Determine if this is a qualified business lead based on available information
-Confidence: How confident you are in this assessment (0-1 scale)`;
-
-    const response = await client.messages.create({
-      model: 'claude-3-5-haiku-20241022',
-      max_tokens: 300,
-      messages: [
-        {
-          role: 'user',
-          content: prompt
-        }
-      ]
+    const { data, error } = await supabase.functions.invoke('ai-qualify', {
+      body: leadData
     });
 
-    const responseText = response.content[0].text;
-    
-    // Extract JSON from response (handle case where it might be wrapped in markdown)
-    let jsonMatch = responseText.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      throw new Error('No JSON found in response');
-    }
-    
-    const result = JSON.parse(jsonMatch[0]);
+    if (error) throw error;
+    if (data.error) throw new Error(data.error);
 
     return {
-      ai_score: Math.min(100, Math.max(0, result.score || 0)),
-      ai_category: result.category || 'cold',
-      ai_confidence: Math.min(1, Math.max(0, result.confidence || 0)),
-      reasoning: result.reasoning || ''
+      ai_score: data.ai_score,
+      ai_category: data.ai_category,
+      ai_confidence: data.ai_confidence,
+      reasoning: data.reasoning
     };
   } catch (error) {
     console.error('AI qualification error:', error);

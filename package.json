@@ -28,6 +28,7 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.2",
+    "supabase": "^2.83.0"
   }
 }
