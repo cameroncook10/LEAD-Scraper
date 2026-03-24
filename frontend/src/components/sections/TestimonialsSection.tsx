@@ -43,11 +43,11 @@ export function TestimonialsSection() {
         >
           <span className="badge-cyan mb-4 inline-block">Testimonials</span>
           <h2 className="text-display text-4xl md:text-5xl lg:text-6xl mb-4">
-            <span className="gradient-text-subtle">Trusted by </span>
-            <span className="gradient-text-cyan">Industry Leaders</span>
+            <span className="gradient-text-subtle">What </span>
+            <span className="gradient-text-cyan">Users Say</span>
           </h2>
           <p className="text-gray-500 text-lg max-w-2xl mx-auto font-light">
-            Businesses generating 10x more qualified leads with Agent Lead.
+            Hear from early adopters using Agent Lead to grow their pipeline.
           </p>
         </motion.div>
 

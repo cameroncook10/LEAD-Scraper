@@ -97,10 +97,10 @@ export function DashboardSection() {
 
             {/* Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 relative z-10">
-              <StatCard title="Total Leads" value="12,847" change="+22%" trend="up" />
-              <StatCard title="DMs Sent" value="3,291" change="+18%" trend="up" />
-              <StatCard title="Comments Posted" value="5,102" change="+31%" trend="up" />
-              <StatCard title="Conversions" value="847" change="+42%" trend="up" />
+              <StatCard title="Total Leads" value="—" change="" trend="up" />
+              <StatCard title="DMs Sent" value="—" change="" trend="up" />
+              <StatCard title="Emails Sent" value="—" change="" trend="up" />
+              <StatCard title="Conversions" value="—" change="" trend="up" />
             </div>
 
             {/* Chart */}

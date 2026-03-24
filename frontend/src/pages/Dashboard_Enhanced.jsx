@@ -1,27 +1,19 @@
 import React, { useState } from 'react';
 import { 
-  Zap, TrendingUp, Users, Activity, ArrowRight, PlayCircle, 
-  CheckCircle, Clock, Search, Filter, Inbox, Settings, Target, 
-  BarChart3, MessageSquare, Briefcase, Bell, Link2, Download,
-  Sliders, ArrowLeft
+  Zap, TrendingUp, Users, Activity, ArrowRight, 
+  Search, Inbox, Settings, Target, 
+  BarChart3, MessageSquare, Bell, Download,
+  ArrowLeft, Instagram, Facebook, Mail, Globe
 } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { startScrape } from '../services/api';
 
-const chartData = {
-  '7D': [60, 70, 65, 80, 85, 90, 100],
-  '30D': [30, 45, 35, 55, 40, 60, 50, 70, 65, 75, 70, 85, 80, 90, 85, 95, 90, 88, 92, 87, 94, 91, 96, 93, 98, 95, 92, 97, 94, 100],
-  '90D': Array.from({length: 90}, () => Math.floor(Math.random() * 60) + 40)
-};
-
-const mockLeads = [
-  { id: 1, name: "Johnson HVAC", location: "Phoenix, AZ", score: "94", status: "Hot", industry: "Services", description: "Established cooling and heating residential company. Seeking commercial contracts and B2B partnerships for bulk AC units." },
-  { id: 2, name: "Prime Landscaping", location: "Charlotte, NC", score: "87", status: "Warm", industry: "Services", description: "High-end landscaping and yard design. Looking for enterprise corporate campuses and real estate developers." },
-  { id: 3, name: "Elite Plumbing", location: "Richmond, VA", score: "91", status: "Hot", industry: "Contractor", description: "24/7 emergency pipe repair. High volume of search intent. Open to SaaS dispatch software." },
-  { id: 4, name: "Shango Roofing", location: "Richmond, VA", score: "96", status: "Hot", industry: "Contractor", description: "Top-rated commercial roofing. 20+ trucks. Prime target for fleet tracking tools and CRM solutions." },
-  { id: 5, name: "TechFlow Solutions", location: "Austin, TX", score: "45", status: "Cold", industry: "Software", description: "Small IT managed services provider. Listed needing cybersecurity updates and compliance audits." },
-  { id: 6, name: "Apex Builders", location: "Miami, FL", score: "62", status: "Cold", industry: "Contractor", description: "General contractor for residential homes. Heavy usage of legacy tools, massive opportunity for digitalization." },
-];
+/* ════════════════════════════════════════════════
+   DASHBOARD — Premium Glass Design System
+   Uses the same tokens as the landing page:
+   glass-liquid, mesh-*, gradient-text-cyan, 
+   liquid-border, btn-primary
+   ════════════════════════════════════════════════ */
 
 function DashboardEnhanced() {
   const navigate = useNavigate();
@@ -54,29 +46,24 @@ function DashboardEnhanced() {
     setLoading(true);
     setError(null);
     setSuccess(null);
-
     try {
-      if (!query.trim()) {
-        setError('Please enter a search query');
-        setLoading(false);
-        return;
-      }
+      if (!query.trim()) { setError('Please enter a search query'); setLoading(false); return; }
       const result = await startScrape(source, query, parseInt(limit));
       setSuccess(`✓ Scrape job started (ID: ${result.jobId})`);
       setQuery('');
-      // Optionally navigate to Jobs or Overview
     } catch (err) {
       setError(err.response?.data?.error || err.message || 'Failed to start scrape job');
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
   const [settings, setSettings] = useState({
-    autoDm: true,
-    autoEmail: false,
-    aiQualify: true,
-    weeklyReport: true
+    autoDm: false, autoEmail: false, aiQualify: true, weeklyReport: false
+  });
+
+  // Outreach channel config
+  const [outreach, setOutreach] = useState({
+    igToken: '', fbPageId: '', fbToken: '',
+    smtpHost: '', smtpPort: '587', smtpUser: '', smtpPass: ''
   });
 
   const tabs = [
@@ -89,40 +76,62 @@ function DashboardEnhanced() {
     { name: 'Settings', icon: <Settings className="w-5 h-5" /> }
   ];
 
-  // Derived state
-  const activeChartData = chartData[timeFilter];
-  
-  const filteredLeads = mockLeads.filter(lead => {
-    const searchLower = searchQuery.toLowerCase();
-    const matchesSearch = lead.name.toLowerCase().includes(searchLower) || 
-                          lead.industry.toLowerCase().includes(searchLower) ||
-                          (lead.description && lead.description.toLowerCase().includes(searchLower));
-    const matchesStatus = leadFilter === 'All' || lead.status === leadFilter;
-    return matchesSearch && matchesStatus;
+  // ── Empty chart data (real data will populate from Supabase) ──
+  const emptyChart = { '7D': Array(7).fill(0), '30D': Array(30).fill(0), '90D': Array(90).fill(0) };
+  const activeChartData = emptyChart[timeFilter];
+
+  // ── No fake leads ──
+  const leads = []; // Will be populated from Supabase
+  const filteredLeads = leads.filter(lead => {
+    const q = searchQuery.toLowerCase();
+    const matchSearch = lead.name?.toLowerCase().includes(q) || lead.industry?.toLowerCase().includes(q) || lead.description?.toLowerCase().includes(q);
+    const matchStatus = leadFilter === 'All' || lead.status === leadFilter;
+    return matchSearch && matchStatus;
   });
 
+  /* ═══ Reusable Glass Card ═══ */
+  const Card = ({ children, className = '', mesh = 'mesh-cyan' }) => (
+    <div className={`${mesh} glass-liquid rounded-2xl p-6 transition-all duration-500 hover:shadow-lg hover:shadow-cyan-500/10 ${className}`}>
+      {children}
+    </div>
+  );
+
+  /* ═══ Empty State ═══ */
+  const EmptyState = ({ icon: Icon, title, subtitle }) => (
+    <div className="flex flex-col items-center justify-center py-16 text-center">
+      <div className="w-16 h-16 rounded-2xl glass-liquid flex items-center justify-center mb-4">
+        <Icon className="w-8 h-8 text-cyan-500/40" />
+      </div>
+      <h4 className="text-lg font-semibold text-gray-300 mb-2">{title}</h4>
+      <p className="text-sm text-gray-500 max-w-sm">{subtitle}</p>
+    </div>
+  );
+
   return (
-    <div className="min-h-screen bg-[#050505] text-white flex overflow-hidden">
-      {/* Sidebar Navigation */}
-      <aside className="hidden md:flex flex-col w-64 bg-slate-900/50 border-r border-slate-800">
-        <div className="p-6 flex items-center space-x-3 cursor-pointer" onClick={() => navigate('/')}>
-          <div className="w-8 h-8 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-lg flex items-center justify-center">
-            <Zap className="w-5 h-5 text-white" />
+    <div className="min-h-screen bg-[#050505] text-white flex overflow-hidden noise-overlay">
+      {/* ══════ SIDEBAR ══════ */}
+      <aside className="hidden md:flex flex-col w-64 glass-liquid border-r border-white/[0.06]">
+        {/* Logo */}
+        <div className="p-6 flex items-center gap-3 cursor-pointer" onClick={() => navigate('/')}>
+          <div className="w-9 h-9 rounded-lg overflow-hidden flex items-center justify-center">
+            <img src="/logo.png" alt="Agent Lead" className="w-9 h-9 object-contain" />
           </div>
-          <span className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
-            AgentLead
+          <span className="font-bold text-base tracking-tight">
+            <span className="text-white">Agent</span>
+            <span className="text-cyan-400">Lead</span>
           </span>
         </div>
 
-        <nav className="flex-1 px-4 space-y-1 mt-4 text-sm font-medium">
+        {/* Nav Tabs */}
+        <nav className="flex-1 px-3 space-y-1 mt-2 text-sm font-medium">
           {tabs.map((tab) => (
             <button
               key={tab.name}
               onClick={() => setActiveTab(tab.name)}
-              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 ${
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${
                 activeTab === tab.name 
-                  ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20' 
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+                  ? 'glass-liquid liquid-border text-cyan-400 shadow-lg shadow-cyan-500/10' 
+                  : 'text-gray-500 hover:text-white hover:bg-white/[0.03]'
               }`}
             >
               {tab.icon}
@@ -130,440 +139,438 @@ function DashboardEnhanced() {
             </button>
           ))}
         </nav>
+
+        {/* Bottom branding */}
+        <div className="p-4 text-center">
+          <span className="text-xs text-gray-600">Agent Lead v1.0</span>
+        </div>
       </aside>
 
-      {/* Main Content Area */}
+      {/* ══════ MAIN CONTENT ══════ */}
       <main className="flex-1 flex flex-col h-screen overflow-y-auto">
         {/* Header */}
-        <header className="sticky top-0 z-10 bg-[#050505]/80 backdrop-blur-xl border-b border-slate-800 px-8 py-4 flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-white">{activeTab}</h1>
-          <div className="flex items-center space-x-4">
-            <button onClick={() => navigate('/')} className="flex items-center space-x-2 text-sm text-slate-400 hover:text-white transition">
-              <ArrowLeft className="w-4 h-4" />
-              <span>Back to Site</span>
+        <header className="sticky top-0 z-10 glass-nav px-8 py-4 flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-display">
+            <span className="gradient-text-subtle">{activeTab}</span>
+          </h1>
+          <div className="flex items-center gap-4">
+            <button onClick={() => navigate('/')} className="btn-ghost px-4 py-2 text-sm rounded-lg">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Site
             </button>
-            <div className="w-px h-6 bg-slate-800"></div>
-            <button className="flex items-center justify-center w-10 h-10 rounded-full bg-slate-800 hover:bg-slate-700 border border-slate-700 transition relative">
-              <Bell className="w-5 h-5 text-slate-300" />
-              <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
+            <button className="relative w-10 h-10 rounded-full glass-liquid flex items-center justify-center transition hover:shadow-lg hover:shadow-cyan-500/10">
+              <Bell className="w-5 h-5 text-gray-400" />
             </button>
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500 to-blue-500 border-2 border-slate-800 flex items-center justify-center font-bold text-sm">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center font-bold text-sm shadow-lg shadow-cyan-500/20">
               CC
             </div>
           </div>
         </header>
 
-        {/* Tab Content Wrappers */}
+        {/* Page Content */}
         <div className="flex-1 p-8">
           
-          {/* OVERVIEW TAB */}
+          {/* ═══════════════ OVERVIEW ═══════════════ */}
           {activeTab === 'Overview' && (
-            <div className="space-y-8 animate-in fade-in duration-300">
+            <div className="space-y-8">
               {/* Metric Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
                 {[
-                  { title: "Total Leads", value: "12,847", change: "+22%", trend: "up" },
-                  { title: "DMs Sent", value: "3,291", change: "+18%", trend: "up" },
-                  { title: "Comments Hooked", value: "5,102", change: "+31%", trend: "up" },
-                  { title: "Conversions", value: "847", change: "+42%", trend: "up" }
+                  { title: "Total Leads", value: "0", icon: Users },
+                  { title: "DMs Sent", value: "0", icon: MessageSquare },
+                  { title: "Emails Sent", value: "0", icon: Mail },
+                  { title: "Conversions", value: "0", icon: TrendingUp }
                 ].map((stat, i) => (
-                  <div key={i} className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 hover:border-cyan-500/30 transition">
-                    <div className="text-sm text-slate-400 mb-2">{stat.title}</div>
-                    <div className="text-3xl font-bold mb-2">{stat.value}</div>
-                    <div className="flex items-center text-sm text-emerald-400 font-medium">
-                      <TrendingUp className="w-4 h-4 mr-1" />
-                      {stat.change}
+                  <Card key={i}>
+                    <div className="flex items-center justify-between mb-4">
+                      <span className="text-sm text-gray-400 font-medium">{stat.title}</span>
+                      <div className="w-8 h-8 rounded-lg bg-cyan-500/10 flex items-center justify-center">
+                        <stat.icon className="w-4 h-4 text-cyan-400" />
+                      </div>
                     </div>
-                  </div>
+                    <div className="text-3xl font-bold gradient-text-cyan">{stat.value}</div>
+                    <div className="flex items-center gap-1 mt-2 text-xs text-gray-500">
+                      <span>No data yet</span>
+                    </div>
+                  </Card>
                 ))}
               </div>
 
               {/* Chart */}
-              <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6">
+              <Card className="!p-8">
                 <div className="flex items-center justify-between mb-8">
-                  <h3 className="text-lg font-bold">Conversion Funnel Activity</h3>
-                  <div className="flex bg-slate-800 p-1 rounded-lg">
+                  <h3 className="text-lg font-semibold text-white">Activity</h3>
+                  <div className="flex glass-liquid rounded-lg p-1">
                     {['7D', '30D', '90D'].map(time => (
                       <button 
                         key={time}
                         onClick={() => setTimeFilter(time)}
-                        className={`px-4 py-1 rounded-md text-sm font-medium transition ${timeFilter === time ? 'bg-cyan-500 text-white' : 'text-slate-400 hover:text-white'}`}
+                        className={`px-4 py-1.5 rounded-md text-xs font-semibold transition-all duration-300 ${
+                          timeFilter === time 
+                            ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-lg shadow-cyan-500/25' 
+                            : 'text-gray-500 hover:text-white'
+                        }`}
                       >
                         {time}
                       </button>
                     ))}
                   </div>
                 </div>
-                <div className="h-64 flex items-end justify-between gap-1 md:gap-2">
-                  {activeChartData.map((val, i) => (
-                    <div 
-                      key={i} 
-                      className="flex-1 bg-gradient-to-t from-cyan-500/20 to-cyan-500/80 rounded-t-sm hover:from-cyan-400 hover:to-cyan-400 transition-all cursor-pointer"
-                      style={{ height: `${val}%`, minWidth: '4px' }}
-                    />
-                  ))}
+                <div className="h-48 flex items-end justify-between gap-1 relative">
+                  {activeChartData.length > 0 && activeChartData.every(v => v === 0) ? (
+                    <div className="absolute inset-0 flex items-center justify-center text-gray-600 text-sm">
+                      Activity will appear here once you start campaigns
+                    </div>
+                  ) : (
+                    activeChartData.map((val, i) => (
+                      <div 
+                        key={i} 
+                        className="flex-1 bg-gradient-to-t from-cyan-500/20 to-cyan-500/80 rounded-t-sm transition-all cursor-pointer hover:from-cyan-400 hover:to-cyan-300"
+                        style={{ height: `${val}%`, minWidth: '3px' }}
+                      />
+                    ))
+                  )}
                 </div>
-              </div>
+              </Card>
 
-              {/* Searchable Leads List */}
-              <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6">
+              {/* Recent Leads */}
+              <Card>
                 <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-lg font-bold">Recent Signups</h3>
+                  <h3 className="text-lg font-semibold text-white">Recent Leads</h3>
                   <div className="relative">
-                    <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                     <input 
-                      type="text" 
-                      placeholder="Search leads..." 
-                      value={searchQuery}
+                      type="text" placeholder="Search by keyword..." value={searchQuery}
                       onChange={e => setSearchQuery(e.target.value)}
-                      className="bg-slate-800 border border-slate-700 text-sm rounded-lg pl-9 pr-4 py-2 focus:outline-none focus:border-cyan-500 text-white w-64"
+                      className="glass-liquid text-sm rounded-xl pl-9 pr-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 text-white w-64 border-none"
                     />
                   </div>
                 </div>
-                <div className="space-y-2">
-                  {filteredLeads.slice(0, 4).map(lead => (
-                    <div key={lead.id} className="flex items-center justify-between p-4 bg-slate-800/30 rounded-xl hover:bg-slate-800 transition">
-                      <div>
-                        <div className="font-bold">{lead.name}</div>
-                        <div className="text-xs text-slate-400">{lead.location} • {lead.industry}</div>
+                {filteredLeads.length === 0 ? (
+                  <EmptyState icon={Users} title="No leads yet" subtitle="Start a scrape campaign to begin collecting qualified leads." />
+                ) : (
+                  <div className="space-y-2">
+                    {filteredLeads.slice(0, 4).map(lead => (
+                      <div key={lead.id} className="flex items-center justify-between p-4 glass-liquid rounded-xl transition-all hover:shadow-lg hover:shadow-cyan-500/5">
+                        <div>
+                          <div className="font-semibold text-white">{lead.name}</div>
+                          <div className="text-xs text-gray-500">{lead.location} · {lead.industry}</div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="font-mono text-cyan-400 font-bold text-sm">{lead.score}%</span>
+                          <span className={`px-3 py-1 rounded-full text-xs font-bold ${lead.status === 'Hot' ? 'bg-red-500/15 text-red-400 border border-red-500/20' : lead.status === 'Warm' ? 'bg-amber-500/15 text-amber-400 border border-amber-500/20' : 'bg-blue-500/15 text-blue-400 border border-blue-500/20'}`}>
+                            {lead.status}
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex items-center space-x-4">
-                        <span className="font-mono text-cyan-400 font-bold">{lead.score}%</span>
-                        <span className={`px-3 py-1 rounded-full text-xs font-bold ${lead.status === 'Hot' ? 'bg-red-500/20 text-red-400' : lead.status === 'Warm' ? 'bg-amber-500/20 text-amber-400' : 'bg-blue-500/20 text-blue-400'}`}>
-                          {lead.status}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                  {filteredLeads.length === 0 && (
-                    <div className="text-center py-8 text-slate-500">No leads found matching your search.</div>
-                  )}
-                </div>
-              </div>
+                    ))}
+                  </div>
+                )}
+              </Card>
             </div>
           )}
 
-          {/* LEADS TAB */}
+          {/* ═══════════════ LEADS ═══════════════ */}
           {activeTab === 'Leads' && (
-            <div className="space-y-6 animate-in fade-in duration-300 h-full flex flex-col">
+            <div className="space-y-6 h-full flex flex-col">
               <div className="flex items-center justify-between">
-                <div className="flex bg-slate-800 p-1 rounded-lg">
+                <div className="flex glass-liquid rounded-xl p-1">
                   {['All', 'Hot', 'Warm', 'Cold'].map(f => (
                     <button 
-                      key={f}
-                      onClick={() => setLeadFilter(f)}
-                      className={`px-4 py-1.5 rounded-md text-sm font-medium transition ${leadFilter === f ? 'bg-cyan-500 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
-                    >
-                      {f}
-                    </button>
+                      key={f} onClick={() => setLeadFilter(f)}
+                      className={`px-5 py-2 rounded-lg text-xs font-semibold transition-all duration-300 ${
+                        leadFilter === f ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-lg shadow-cyan-500/25' : 'text-gray-500 hover:text-white'
+                      }`}
+                    >{f}</button>
                   ))}
                 </div>
-                <button className="flex items-center space-x-2 bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-lg text-sm font-medium transition border border-slate-700">
-                  <Download className="w-4 h-4" />
-                  <span>Export CSV</span>
+                <button className="btn-ghost px-4 py-2 text-sm rounded-xl">
+                  <Download className="w-4 h-4 mr-2" /> Export CSV
                 </button>
               </div>
 
-              <div className="bg-slate-900/50 border border-slate-800 rounded-2xl flex-1 overflow-hidden flex flex-col">
-                <table className="w-full text-left text-sm">
-                  <thead className="bg-slate-800/80 text-slate-400">
-                    <tr>
-                      <th className="px-6 py-4 font-medium">Company Name</th>
-                      <th className="px-6 py-4 font-medium">Keywords / Description</th>
-                      <th className="px-6 py-4 font-medium">Location</th>
-                      <th className="px-6 py-4 font-medium">Industry</th>
-                      <th className="px-6 py-4 font-medium">AI Score</th>
-                      <th className="px-6 py-4 font-medium">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredLeads.map(lead => (
-                      <tr key={lead.id} className="border-t border-slate-800 hover:bg-slate-800/30 transition cursor-pointer">
-                        <td className="px-6 py-4 font-bold text-white">{lead.name}</td>
-                        <td className="px-6 py-4 text-slate-400 text-xs w-1/3 pr-8">{lead.description}</td>
-                        <td className="px-6 py-4 text-slate-400">{lead.location}</td>
-                        <td className="px-6 py-4 text-slate-400">{lead.industry}</td>
-                        <td className="px-6 py-4 font-mono text-cyan-400">{lead.score}%</td>
-                        <td className="px-6 py-4">
-                           <span className={`px-3 py-1 rounded-full text-xs font-bold ${lead.status === 'Hot' ? 'bg-red-500/20 text-red-400' : lead.status === 'Warm' ? 'bg-amber-500/20 text-amber-400' : 'bg-blue-500/20 text-blue-400'}`}>
-                            {lead.status}
-                          </span>
-                        </td>
+              <Card className="flex-1 !p-0 overflow-hidden flex flex-col">
+                {filteredLeads.length === 0 ? (
+                  <EmptyState icon={Users} title="No leads in database" subtitle="Your scraped and qualified leads will appear here. Start a campaign to populate." />
+                ) : (
+                  <table className="w-full text-left text-sm">
+                    <thead>
+                      <tr className="border-b border-white/[0.06]">
+                        <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Company</th>
+                        <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Description</th>
+                        <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Location</th>
+                        <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Score</th>
+                        <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-                {filteredLeads.length === 0 && (
-                  <div className="flex-1 flex items-center justify-center text-slate-500">No leads matching current filters.</div>
+                    </thead>
+                    <tbody>
+                      {filteredLeads.map(lead => (
+                        <tr key={lead.id} className="border-b border-white/[0.04] hover:bg-white/[0.02] transition cursor-pointer">
+                          <td className="px-6 py-4 font-semibold text-white">{lead.name}</td>
+                          <td className="px-6 py-4 text-gray-500 text-xs max-w-xs truncate">{lead.description}</td>
+                          <td className="px-6 py-4 text-gray-400">{lead.location}</td>
+                          <td className="px-6 py-4 font-mono text-cyan-400 font-bold">{lead.score}%</td>
+                          <td className="px-6 py-4">
+                            <span className={`px-3 py-1 rounded-full text-xs font-bold ${lead.status === 'Hot' ? 'bg-red-500/15 text-red-400' : lead.status === 'Warm' ? 'bg-amber-500/15 text-amber-400' : 'bg-blue-500/15 text-blue-400'}`}>
+                              {lead.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 )}
-              </div>
+              </Card>
             </div>
           )}
 
-          {/* TARGETING TAB */}
+          {/* ═══════════════ TARGETING ═══════════════ */}
           {activeTab === 'Targeting' && (
-            <div className="max-w-3xl space-y-8 animate-in fade-in duration-300">
-              <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-8">
-                <h3 className="text-xl font-bold mb-2">AI Engagement Settings</h3>
-                <p className="text-slate-400 mb-8">Configure how the AI agent identifies and extracts lead profiles.</p>
+            <div className="max-w-3xl space-y-8">
+              <Card className="!p-8" mesh="mesh-violet">
+                <h3 className="text-xl font-bold mb-2">
+                  <span className="gradient-text-cyan">AI Engagement</span> Settings
+                </h3>
+                <p className="text-gray-500 mb-8 text-sm">Configure how the AI agent identifies, qualifies, and engages lead profiles.</p>
                 
-                <div className="space-y-6">
+                <div className="space-y-4">
                   {[
-                    { key: 'autoDm', title: 'Auto-DM Qualified Leads', desc: 'Automatically send the highly-converting intro sequence to leads scoring over 85%.' },
-                    { key: 'autoEmail', title: 'Auto-Email Warm Leads', desc: 'Add warm leads (Score 60-84) directly into an email sequence.' },
-                    { key: 'aiQualify', title: 'Deep AI Qualification', desc: 'Spend extra tokens to extract revenue estimates, exact tech stack, and recent news.' }
+                    { key: 'autoDm', title: 'Auto-DM Qualified Leads', desc: 'Automatically send intro sequences to leads scoring over 85%.' },
+                    { key: 'autoEmail', title: 'Auto-Email Warm Leads', desc: 'Add warm leads (Score 60-84) directly into your email sequence.' },
+                    { key: 'aiQualify', title: 'Deep AI Qualification', desc: 'Extract revenue estimates, tech stack, and recent news for each lead.' }
                   ].map((setting) => (
-                    <div key={setting.key} className="flex items-center justify-between p-4 bg-slate-800/30 rounded-xl border border-slate-700/50">
+                    <div key={setting.key} className="flex items-center justify-between p-5 glass-liquid rounded-xl transition-all hover:shadow-lg hover:shadow-cyan-500/5">
                       <div>
-                        <div className="font-bold text-white mb-1">{setting.title}</div>
-                        <div className="text-sm text-slate-400">{setting.desc}</div>
+                        <div className="font-semibold text-white mb-1">{setting.title}</div>
+                        <div className="text-sm text-gray-500">{setting.desc}</div>
                       </div>
                       <button 
                         onClick={() => setSettings(s => ({ ...s, [setting.key]: !s[setting.key] }))}
-                        className={`relative w-12 h-6 rounded-full transition-colors duration-300 ${settings[setting.key] ? 'bg-cyan-500' : 'bg-slate-600'}`}
+                        className={`relative w-12 h-6 rounded-full transition-all duration-300 ${settings[setting.key] ? 'bg-gradient-to-r from-cyan-500 to-blue-500 shadow-lg shadow-cyan-500/30' : 'bg-white/10'}`}
                       >
-                        <div className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform duration-300 ${settings[setting.key] ? 'translate-x-6' : 'translate-x-0'}`}></div>
+                        <div className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform duration-300 shadow-md ${settings[setting.key] ? 'translate-x-6' : 'translate-x-0'}`} />
                       </button>
                     </div>
                   ))}
                 </div>
-              </div>
+              </Card>
             </div>
           )}
 
-          {/* CAMPAIGNS TAB */}
+          {/* ═══════════════ CAMPAIGNS ═══════════════ */}
           {activeTab === 'Campaigns' && (
-            <div className="space-y-6 animate-in fade-in duration-300">
-              
-              {/* Scrape Form Integration */}
-              <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-8 mb-8">
-                <h3 className="text-xl font-bold mb-6">Start New Scrape Campaign</h3>
+            <div className="space-y-8">
+              {/* Scrape Form */}
+              <Card className="!p-8 liquid-border" mesh="mesh-blue">
+                <h3 className="text-xl font-bold mb-6">
+                  <span className="gradient-text-cyan">Launch</span> New Campaign
+                </h3>
                 <form onSubmit={handleStartScrape} className="space-y-6">
-                  {/* Source selection */}
                   <div>
-                    <label className="block text-sm font-medium text-slate-400 mb-2">Data Source</label>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <label className="block text-sm font-medium text-gray-400 mb-3">Data Source</label>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                       {sources.map(s => (
-                        <button
-                          key={s.value}
-                          type="button"
-                          onClick={() => setSource(s.value)}
-                          className={`p-4 rounded-xl border-2 font-medium transition-colors ${
+                        <button key={s.value} type="button" onClick={() => setSource(s.value)}
+                          className={`p-4 rounded-xl font-medium text-sm transition-all duration-300 ${
                             source === s.value
-                              ? 'border-cyan-500 bg-cyan-500/10 text-cyan-400'
-                              : 'border-slate-800 bg-slate-800/50 text-slate-400 hover:border-slate-600'
+                              ? 'bg-gradient-to-r from-cyan-500/20 to-blue-500/20 text-cyan-400 border border-cyan-500/30 shadow-lg shadow-cyan-500/10'
+                              : 'glass-liquid text-gray-500 hover:text-white'
                           }`}
-                        >
-                          {s.label}
-                        </button>
+                        >{s.label}</button>
                       ))}
                     </div>
                   </div>
 
-                  {/* Query input */}
                   <div>
-                    <label className="block text-sm font-medium text-slate-400 mb-2">Search Query</label>
-                    <input
-                      type="text"
-                      value={query}
-                      onChange={(e) => setQuery(e.target.value)}
-                      placeholder="e.g., plumbers in New York..."
-                      className="w-full bg-slate-800 border border-slate-700 text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-cyan-500 text-white"
+                    <label className="block text-sm font-medium text-gray-400 mb-2">Search Query</label>
+                    <input type="text" value={query} onChange={e => setQuery(e.target.value)}
+                      placeholder="e.g., plumbers in New York..." 
+                      className="w-full glass-liquid text-sm rounded-xl px-4 py-3.5 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 text-white border-none placeholder-gray-600"
                     />
                   </div>
 
-                  {/* Limit input */}
                   <div>
-                    <label className="block text-sm font-medium text-slate-400 mb-2">Number of Leads to Scrape</label>
-                    <input
-                      type="number"
-                      value={limit}
-                      onChange={(e) => setLimit(e.target.value)}
-                      min="1"
-                      max="1000"
-                      className="w-full bg-slate-800 border border-slate-700 text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-cyan-500 text-white"
+                    <label className="block text-sm font-medium text-gray-400 mb-2">Lead Limit</label>
+                    <input type="number" value={limit} onChange={e => setLimit(e.target.value)} min="1" max="1000"
+                      className="w-full glass-liquid text-sm rounded-xl px-4 py-3.5 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 text-white border-none"
                     />
                   </div>
 
-                  {error && <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-sm">{error}</div>}
-                  {success && <div className="p-4 bg-green-500/10 border border-green-500/30 rounded-xl text-green-400 text-sm">{success}</div>}
+                  {error && <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">{error}</div>}
+                  {success && <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm">{success}</div>}
 
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className={`w-full py-4 rounded-xl font-bold text-lg transition-all ${
-                      loading ? 'bg-slate-700 text-slate-400 cursor-not-allowed' : 'bg-cyan-500 hover:bg-cyan-400 text-slate-950 shadow-lg shadow-cyan-500/25'
-                    }`}
-                  >
-                    {loading ? 'Starting Campaign...' : 'Launch Scrape Campaign'}
+                  <button type="submit" disabled={loading} className={`btn w-full py-4 rounded-xl font-bold text-base transition-all ${loading ? 'bg-white/5 text-gray-500 cursor-not-allowed' : 'btn-primary shadow-2xl shadow-cyan-500/20'}`}>
+                    {loading ? 'Launching...' : 'Launch Scrape Campaign'}
                   </button>
                 </form>
-              </div>
+              </Card>
 
-              <div className="flex justify-between">
-                <h3 className="text-xl font-bold">Active Campaigns</h3>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {[
-                  { name: "NYC Plumbers Q3", sent: 1240, replies: 145, status: "Active" },
-                  { name: "SaaS Founders - Cold Email", sent: 3400, replies: 89, status: "Paused" },
-                  { name: "Local Realtors SMS", sent: 500, replies: 210, status: "Active" }
-                ].map((camp, i) => (
-                  <div key={i} className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 hover:border-cyan-500/30 transition group cursor-pointer">
-                    <div className="flex justify-between items-start mb-4">
-                      <h4 className="text-lg font-bold group-hover:text-cyan-400 transition">{camp.name}</h4>
-                      <span className={`px-3 py-1 rounded-full text-xs font-bold ${camp.status === 'Active' ? 'bg-green-500/20 text-green-400' : 'bg-slate-700 text-slate-400'}`}>
-                        {camp.status}
-                      </span>
-                    </div>
-                    <div className="flex gap-8 mt-6">
-                      <div>
-                        <div className="text-slate-400 text-xs uppercase tracking-wider mb-1">Sent</div>
-                        <div className="text-xl font-bold">{camp.sent}</div>
-                      </div>
-                      <div>
-                        <div className="text-slate-400 text-xs uppercase tracking-wider mb-1">Replies</div>
-                        <div className="text-xl font-bold text-cyan-400">{camp.replies}</div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+              {/* Active Campaigns */}
+              <div>
+                <h3 className="text-lg font-semibold text-white mb-4">Active Campaigns</h3>
+                <EmptyState icon={Zap} title="No campaigns yet" subtitle="Launch your first scrape campaign above to start generating leads." />
               </div>
             </div>
           )}
 
-          {/* INBOX TAB */}
+          {/* ═══════════════ INBOX ═══════════════ */}
           {activeTab === 'Inbox' && (
-            <div className="bg-slate-900/50 border border-slate-800 rounded-2xl h-full flex overflow-hidden animate-in fade-in duration-300">
-              <div className="w-1/3 border-r border-slate-800 flex flex-col">
-                <div className="p-4 border-b border-slate-800 font-bold">Recent Messages</div>
-                <div className="flex-1 overflow-y-auto">
+            <Card className="h-[calc(100vh-12rem)] !p-0 overflow-hidden flex">
+              <div className="w-1/3 border-r border-white/[0.06] flex flex-col">
+                <div className="p-5 border-b border-white/[0.06]">
+                  <h4 className="font-semibold text-white text-sm">Messages</h4>
+                </div>
+                <div className="flex-1 flex items-center justify-center">
+                  <p className="text-xs text-gray-600 text-center px-4">No conversations yet.<br/>Replies from your DMs and emails will appear here.</p>
+                </div>
+              </div>
+              <div className="flex-1 flex flex-col items-center justify-center">
+                <div className="w-16 h-16 rounded-2xl glass-liquid flex items-center justify-center mb-4">
+                  <MessageSquare className="w-8 h-8 text-cyan-500/30" />
+                </div>
+                <p className="text-gray-600 text-sm">Select a conversation to view</p>
+              </div>
+            </Card>
+          )}
+
+          {/* ═══════════════ ANALYTICS ═══════════════ */}
+          {activeTab === 'Analytics' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card mesh="mesh-blue">
+                <h3 className="text-lg font-semibold text-white mb-6">Conversion Funnel</h3>
+                <div className="space-y-5">
                   {[
-                    { name: "Sarah Jenkins", company: "Elite Roofing", msg: "Can we schedule a call for Tuesday?", unread: true, time: "10m" },
-                    { name: "Mike Ross", company: "LegalTech Inc", msg: "I'm interested in your pricing.", unread: true, time: "1h" },
-                    { name: "David Chen", company: "Peak Plumbers", msg: "Not right now, thanks.", unread: false, time: "1d" }
-                  ].map((msg, i) => (
-                    <div key={i} className={`p-4 border-b border-slate-800/50 cursor-pointer hover:bg-slate-800/50 transition ${msg.unread ? 'bg-slate-800/30' : ''}`}>
-                      <div className="flex justify-between mb-1">
-                        <span className={`font-medium ${msg.unread ? 'text-white' : 'text-slate-300'}`}>{msg.name}</span>
-                        <span className="text-xs text-slate-500">{msg.time}</span>
+                    { step: "Total Scraped", val: 0, pct: 0, color: "from-gray-600 to-gray-500" },
+                    { step: "Qualified (Score > 50)", val: 0, pct: 0, color: "from-blue-500 to-blue-400" },
+                    { step: "Contacted", val: 0, pct: 0, color: "from-cyan-500 to-cyan-400" },
+                    { step: "Replied", val: 0, pct: 0, color: "from-emerald-500 to-emerald-400" }
+                  ].map((f, i) => (
+                    <div key={i}>
+                      <div className="flex justify-between text-sm mb-2">
+                        <span className="text-gray-400">{f.step}</span>
+                        <span className="font-bold text-white">{f.val}</span>
                       </div>
-                      <div className="text-xs text-cyan-500 mb-2">{msg.company}</div>
-                      <div className={`text-sm truncate pr-4 ${msg.unread ? 'text-slate-300 font-medium' : 'text-slate-500'}`}>
-                        {msg.msg}
+                      <div className="w-full h-2 rounded-full bg-white/[0.06] overflow-hidden">
+                        <div className={`h-full bg-gradient-to-r ${f.color} rounded-full transition-all`} style={{ width: `${f.pct}%` }} />
                       </div>
                     </div>
                   ))}
                 </div>
-              </div>
-              <div className="flex-1 flex flex-col items-center justify-center text-slate-500 bg-slate-900/30">
-                <MessageSquare className="w-16 h-16 mb-4 opacity-20" />
-                <p>Select a conversation to view the thread</p>
-              </div>
+              </Card>
+
+              <Card mesh="mesh-violet">
+                <h3 className="text-lg font-semibold text-white mb-6">Industry Breakdown</h3>
+                <EmptyState icon={BarChart3} title="No data yet" subtitle="Industry analytics will populate as your lead database grows." />
+              </Card>
             </div>
           )}
 
-          {/* ANALYTICS TAB */}
-          {activeTab === 'Analytics' && (
-            <div className="space-y-6 animate-in fade-in duration-300">
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6">
-                  <h3 className="text-lg font-bold mb-4">Conversion Funnel</h3>
-                  <div className="space-y-4">
-                    {[
-                      { step: "Total Scraped", val: 12847, pct: 100, color: "bg-slate-600" },
-                      { step: "Qualified Leads (Score > 50)", val: 8402, pct: 65, color: "bg-blue-500" },
-                      { step: "Contacted", val: 3291, pct: 25, color: "bg-cyan-500" },
-                      { step: "Replied", val: 847, pct: 6, color: "bg-emerald-500" }
-                    ].map((f, i) => (
-                      <div key={i}>
-                        <div className="flex justify-between text-sm mb-1">
-                          <span className="text-slate-300">{f.step}</span>
-                          <span className="font-bold">{f.val}</span>
-                        </div>
-                        <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
-                          <div className={`h-full ${f.color}`} style={{ width: `${f.pct}%` }}></div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6">
-                   <h3 className="text-lg font-bold mb-4">Industry Breakdown</h3>
-                   <div className="flex gap-4 items-center">
-                     <div className="w-48 h-48 rounded-full border-8 border-slate-800 relative flex items-center justify-center">
-                       <span className="text-sm text-slate-400">Top 3</span>
-                       {/* Decorative pie chart visual */}
-                       <div className="absolute top-0 right-0 bottom-1/2 left-1/2 border-t-8 border-r-8 border-cyan-500 rounded-tr-full"></div>
-                       <div className="absolute bottom-0 right-0 top-1/2 left-1/2 border-b-8 border-r-8 border-blue-500 rounded-br-full"></div>
-                     </div>
-                     <div className="flex-1 space-y-4">
-                       <div>
-                         <div className="flex items-center gap-2 mb-1"><div className="w-3 h-3 bg-cyan-500 rounded-full"></div> <span className="text-sm font-medium">Home Services</span></div>
-                         <div className="text-2xl font-bold ml-5 text-white">45%</div>
-                       </div>
-                       <div>
-                         <div className="flex items-center gap-2 mb-1"><div className="w-3 h-3 bg-blue-500 rounded-full"></div> <span className="text-sm font-medium">SaaS / Software</span></div>
-                         <div className="text-2xl font-bold ml-5 text-white">35%</div>
-                       </div>
-                       <div>
-                         <div className="flex items-center gap-2 mb-1"><div className="w-3 h-3 bg-slate-600 rounded-full"></div> <span className="text-sm font-medium">Real Estate</span></div>
-                         <div className="text-2xl font-bold ml-5 text-white">20%</div>
-                       </div>
-                     </div>
-                   </div>
-                </div>
-               </div>
-            </div>
-          )}
-
-          {/* SETTINGS TAB */}
+          {/* ═══════════════ SETTINGS ═══════════════ */}
           {activeTab === 'Settings' && (
-            <div className="max-w-4xl space-y-8 animate-in fade-in duration-300">
-               <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-8">
-                <h3 className="text-lg font-bold mb-6 border-b border-slate-800 pb-4">Account Profile</h3>
+            <div className="max-w-4xl space-y-8">
+              {/* Account */}
+              <Card className="!p-8">
+                <h3 className="text-lg font-semibold text-white mb-6 pb-4 border-b border-white/[0.06]">Account Profile</h3>
                 <div className="grid grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-slate-400 mb-2">Workspace Name</label>
-                    <input type="text" defaultValue="Cameron's Workspace" className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-cyan-500" />
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Workspace Name</label>
+                    <input type="text" defaultValue="" placeholder="My Workspace" className="w-full glass-liquid rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:ring-1 focus:ring-cyan-500/50 border-none" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-400 mb-2">Email Address</label>
-                    <input type="email" defaultValue="cameron@example.com" className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-cyan-500" />
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Email Address</label>
+                    <input type="email" defaultValue="" placeholder="you@email.com" className="w-full glass-liquid rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:ring-1 focus:ring-cyan-500/50 border-none" />
                   </div>
                 </div>
-                <button className="mt-6 bg-white text-black px-6 py-2 rounded-lg font-semibold hover:bg-gray-200 transition">Save Changes</button>
-               </div>
+                <button className="btn-primary px-6 py-2.5 rounded-xl text-sm mt-6">Save Changes</button>
+              </Card>
 
-               <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-8">
-                <h3 className="text-lg font-bold mb-6 border-b border-slate-800 pb-4">Connected Integrations</h3>
+              {/* Outreach Channels */}
+              <Card className="!p-8" mesh="mesh-violet">
+                <h3 className="text-lg font-semibold text-white mb-2 pb-4 border-b border-white/[0.06]">
+                  <span className="gradient-text-cyan">Connected</span> Outreach Channels
+                </h3>
+                <p className="text-gray-500 text-sm mb-6">Configure your Instagram, Facebook, and Email credentials to enable automated outreach.</p>
+                
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 border border-slate-700/50 rounded-xl bg-slate-800/30">
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 bg-blue-500/20 text-blue-400 rounded-lg flex items-center justify-center font-bold">SF</div>
+                  {/* Instagram */}
+                  <div className="glass-liquid rounded-xl p-5 space-y-3">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center">
+                        <Instagram className="w-5 h-5 text-white" />
+                      </div>
                       <div>
-                        <div className="font-bold">Salesforce</div>
-                        <div className="text-xs text-slate-400">Syncs leads automatically every 1h</div>
+                        <div className="font-semibold text-white text-sm">Instagram DM</div>
+                        <div className="text-xs text-gray-500">Requires Facebook Developer App + Page Token</div>
                       </div>
                     </div>
-                    <button className="text-red-400 text-sm font-medium hover:text-red-300">Disconnect</button>
+                    <input type="password" placeholder="Page Access Token" value={outreach.igToken}
+                      onChange={e => setOutreach(o => ({ ...o, igToken: e.target.value }))}
+                      className="w-full glass rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/50 border border-white/[0.06] placeholder-gray-600"
+                    />
                   </div>
-                  <div className="flex items-center justify-between p-4 border border-slate-700/50 rounded-xl">
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 bg-orange-500/20 text-orange-400 rounded-lg flex items-center justify-center font-bold">HS</div>
+
+                  {/* Facebook */}
+                  <div className="glass-liquid rounded-xl p-5 space-y-3">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center">
+                        <Facebook className="w-5 h-5 text-white" />
+                      </div>
                       <div>
-                        <div className="font-bold">HubSpot</div>
-                        <div className="text-xs text-slate-400">Not connected</div>
+                        <div className="font-semibold text-white text-sm">Facebook Messenger</div>
+                        <div className="text-xs text-gray-500">Requires Page ID and Page Access Token</div>
                       </div>
                     </div>
-                    <button className="text-cyan-400 text-sm font-medium hover:text-cyan-300">Connect</button>
+                    <div className="grid grid-cols-2 gap-3">
+                      <input type="text" placeholder="Page ID" value={outreach.fbPageId}
+                        onChange={e => setOutreach(o => ({ ...o, fbPageId: e.target.value }))}
+                        className="w-full glass rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/50 border border-white/[0.06] placeholder-gray-600"
+                      />
+                      <input type="password" placeholder="Page Access Token" value={outreach.fbToken}
+                        onChange={e => setOutreach(o => ({ ...o, fbToken: e.target.value }))}
+                        className="w-full glass rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/50 border border-white/[0.06] placeholder-gray-600"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Email (SMTP) */}
+                  <div className="glass-liquid rounded-xl p-5 space-y-3">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
+                        <Mail className="w-5 h-5 text-white" />
+                      </div>
+                      <div>
+                        <div className="font-semibold text-white text-sm">Email (SMTP)</div>
+                        <div className="text-xs text-gray-500">Gmail App Password, Outlook, or custom SMTP</div>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <input type="text" placeholder="SMTP Host" value={outreach.smtpHost}
+                        onChange={e => setOutreach(o => ({ ...o, smtpHost: e.target.value }))}
+                        className="w-full glass rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/50 border border-white/[0.06] placeholder-gray-600"
+                      />
+                      <input type="text" placeholder="Port (587)" value={outreach.smtpPort}
+                        onChange={e => setOutreach(o => ({ ...o, smtpPort: e.target.value }))}
+                        className="w-full glass rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/50 border border-white/[0.06] placeholder-gray-600"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <input type="text" placeholder="Username / Email" value={outreach.smtpUser}
+                        onChange={e => setOutreach(o => ({ ...o, smtpUser: e.target.value }))}
+                        className="w-full glass rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/50 border border-white/[0.06] placeholder-gray-600"
+                      />
+                      <input type="password" placeholder="Password / App Password" value={outreach.smtpPass}
+                        onChange={e => setOutreach(o => ({ ...o, smtpPass: e.target.value }))}
+                        className="w-full glass rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/50 border border-white/[0.06] placeholder-gray-600"
+                      />
+                    </div>
                   </div>
                 </div>
-               </div>
+
+                <button className="btn-primary px-6 py-2.5 rounded-xl text-sm mt-6">Save Outreach Settings</button>
+              </Card>
             </div>
           )}
-          
+
         </div>
       </main>
     </div>

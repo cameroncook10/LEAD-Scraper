@@ -36,7 +36,7 @@ export function CTASection() {
             </h2>
 
             <p className="text-gray-400 text-lg mb-10 max-w-2xl mx-auto font-light">
-              Join hundreds of businesses automating their lead generation with Agent Lead.
+              Start automating your lead generation with Agent Lead.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">

@@ -83,9 +83,9 @@ export function SplineHeroSection() {
             {/* Micro-stats row */}
             <div className="flex gap-8 text-sm">
               {[
-                { value: '12M+', label: 'Leads Scraped' },
-                { value: '94%', label: 'Accuracy Rate' },
-                { value: '2.1M', label: 'DMs Delivered' },
+                { value: '—', label: 'Leads Scraped' },
+                { value: '—', label: 'Accuracy Rate' },
+                { value: '—', label: 'DMs Delivered' },
               ].map((stat, i) => (
                 <motion.div 
                   key={stat.label}
