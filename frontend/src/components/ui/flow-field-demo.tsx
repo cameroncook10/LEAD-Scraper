@@ -94,7 +94,7 @@ export function HeroSection() {
               transition={{ duration: 2, repeat: Infinity, repeatDelay: 1 }}
             />
             <span className="relative z-10 flex items-center gap-2">
-              Start Free Trial
+              Start 3-Day Trial
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </span>
           </motion.button>

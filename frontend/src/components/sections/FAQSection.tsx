@@ -25,7 +25,7 @@ const faqs = [
   },
   {
     q: "Do you offer a free trial?",
-    a: "Yes! Start with a free 14-day trial — no credit card required. You get full access to scraping, AI qualification, and basic outreach features so you can see real results before committing.",
+    a: "Yes! Every plan includes a 3-day free trial. You enter your card upfront but won't be charged until the trial ends. We send a cancellation reminder before your first payment.",
   },
   {
     q: "What kind of support do you offer?",

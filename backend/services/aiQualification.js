@@ -1,13 +1,16 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_ANON_KEY
-);
+let _supabase;
+function getSupabase() {
+  if (!_supabase) {
+    _supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
+  }
+  return _supabase;
+}
 
 export const qualifyLead = async (leadData) => {
   try {
-    const { data, error } = await supabase.functions.invoke('ai-qualify', {
+    const { data, error } = await getSupabase().functions.invoke('ai-qualify', {
       body: leadData
     });
 

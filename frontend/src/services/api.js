@@ -72,4 +72,15 @@ export const loadOutreachCredentials = async (userId = 'default') => {
   return response.data;
 };
 
+// Stripe checkout endpoints
+export const createStripeCheckout = async (plan, isAnnual = false, email = '') => {
+  const response = await api.post('/stripe/create-checkout', { plan, isAnnual, email });
+  return response.data;
+};
+
+export const createStripePortal = async (sessionId) => {
+  const response = await api.post('/stripe/create-portal', { sessionId });
+  return response.data;
+};
+
 export default api;

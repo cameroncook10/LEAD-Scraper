@@ -69,7 +69,7 @@ export default function Landing({ onGetStarted }) {
                   onClick={onGetStarted}
                   className="group bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg font-bold text-lg flex items-center justify-center space-x-2 transition transform hover:scale-105"
                 >
-                  <span>Start Free Trial</span>
+                  <span>Start 3-Day Trial</span>
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition" />
                 </button>
                 <button className="border-2 border-slate-600 hover:border-blue-400 text-white px-8 py-4 rounded-lg font-bold transition">
@@ -542,7 +542,7 @@ export default function Landing({ onGetStarted }) {
               },
               {
                 q: 'Do you offer a free trial?',
-                a: 'Yes! Start free with 1,000 leads. No credit card required.'
+                a: 'Yes! Every plan includes a 3-day free trial. You\'ll enter your card upfront but won\'t be charged until the trial ends. We send a cancellation reminder before your first charge.'
               },
               {
                 q: 'What kind of support do you offer?',

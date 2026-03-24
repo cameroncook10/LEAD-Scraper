@@ -66,7 +66,7 @@ export function SplineHeroSection() {
                 whileTap={{ scale: 0.97 }}
                 className="btn-primary px-8 py-4 text-base rounded-xl"
               >
-                Start Scraping Free
+                Start 3-Day Trial
                 <ArrowRight className="w-4 h-4 ml-2" />
               </motion.button>
               <motion.button

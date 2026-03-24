@@ -52,7 +52,7 @@ export function CTASection() {
             </div>
 
             <p className="mt-6 text-xs text-gray-600">
-              No credit card required • Free 14-day trial
+              3-day free trial on all plans • Cancel anytime
             </p>
           </div>
         </motion.div>

@@ -1,17 +1,18 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { Check, Sparkles } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Check, Sparkles, Loader2 } from "lucide-react";
+import { createStripeCheckout } from "../../services/api";
 
 const plans = [
   {
     name: "Starter",
+    key: "starter",
     monthlyPrice: "$497",
     annualPrice: "$397",
     period: "/month",
     description: "For solo contractors & small businesses getting started with automation.",
     featured: false,
-    cta: "Start Free Trial",
+    cta: "Start 3-Day Trial",
     mesh: "mesh-blue",
     features: [
       "5,000 leads per month",
@@ -25,12 +26,13 @@ const plans = [
   },
   {
     name: "Growth",
+    key: "growth",
     monthlyPrice: "$2,000",
     annualPrice: "$1,600",
     period: "/month",
     description: "For growing businesses ready to scale outreach and dominate their market.",
     featured: true,
-    cta: "Get Started",
+    cta: "Start 3-Day Trial",
     badge: "Most Popular",
     mesh: "mesh-cyan",
     features: [
@@ -47,6 +49,7 @@ const plans = [
   },
   {
     name: "Enterprise",
+    key: "enterprise",
     monthlyPrice: "Custom",
     annualPrice: "Custom",
     period: "",
@@ -68,8 +71,28 @@ const plans = [
 ];
 
 export function PricingSection() {
-  const navigate = useNavigate();
   const [isAnnual, setIsAnnual] = useState(false);
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+
+  const handleCheckout = async (plan: typeof plans[0]) => {
+    if (plan.key === "enterprise") {
+      window.location.href = "mailto:sales@agentlead.io?subject=Enterprise%20Plan%20Inquiry";
+      return;
+    }
+
+    setLoadingPlan(plan.key);
+    try {
+      const data = await createStripeCheckout(plan.key, isAnnual);
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } catch (err) {
+      console.error("Checkout error:", err);
+      alert("Unable to start checkout. Please try again.");
+    } finally {
+      setLoadingPlan(null);
+    }
+  };
 
   return (
     <section id="pricing" className="relative py-28 px-6">
@@ -88,7 +111,7 @@ export function PricingSection() {
             <span className="gradient-text-cyan">Pricing</span>
           </h2>
           <p className="text-gray-500 text-lg max-w-2xl mx-auto font-light">
-            No hidden fees. No contracts. Cancel anytime.
+            3-day free trial on all plans. Cancel anytime before your trial ends.
           </p>
         </motion.div>
 
@@ -151,15 +174,29 @@ export function PricingSection() {
               </div>
 
               <button
-                onClick={() => navigate('/dashboard')}
-                className={`w-full py-3 rounded-xl font-semibold text-sm transition-all duration-300 mb-7 ${
+                onClick={() => handleCheckout(plan)}
+                disabled={loadingPlan === plan.key}
+                className={`w-full py-3 rounded-xl font-semibold text-sm transition-all duration-300 mb-7 flex items-center justify-center gap-2 ${
                   plan.featured
                     ? "bg-gradient-to-r from-cyan-500 to-blue-500 text-white hover:shadow-lg hover:shadow-cyan-500/25"
                     : "bg-white/5 hover:bg-white/10 text-white border border-white/[0.06] hover:border-white/[0.12]"
-                }`}
+                } ${loadingPlan === plan.key ? "opacity-70 cursor-not-allowed" : ""}`}
               >
-                {plan.cta}
+                {loadingPlan === plan.key ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Redirecting to checkout...
+                  </>
+                ) : (
+                  plan.cta
+                )}
               </button>
+
+              {plan.key !== "enterprise" && (
+                <p className="text-center text-xs text-gray-600 -mt-4 mb-5">
+                  3-day free trial • Cancel anytime • Cancellation reminder sent
+                </p>
+              )}
 
               <ul className="space-y-2.5">
                 {plan.features.map((feature, j) => (
