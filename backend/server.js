@@ -13,6 +13,7 @@ import webhooksRoutes from './routes/webhooks.js';
 import workflowRoutes from './routes/workflows.js';
 import socialAuthRoutes from './routes/socialAuth.js';
 import outreachRoutes from './routes/outreach.js';
+import outreachCredentialsRoutes from './routes/outreachCredentials.js';
 import stripeRoutes from './routes/stripe.js';
 import { initializeDatabase } from './db/schema.js';
 import { startQueueProcessor } from './services/messageQueue.js';
@@ -84,6 +85,7 @@ app.use('/api/webhooks', webhooksRoutes);
 app.use('/api/workflows', workflowRoutes);
 app.use('/api/auth', socialAuthRoutes);
 app.use('/api/outreach', outreachRoutes);
+app.use('/api/outreach-credentials', outreachCredentialsRoutes);
 app.use('/api/stripe', stripeRoutes);
 
 // 404 handler

@@ -61,4 +61,15 @@ export const getJobDetails = async (jobId) => {
   return response.data;
 };
 
+// Outreach credentials endpoints
+export const saveOutreachCredentials = async (credentials) => {
+  const response = await api.post('/outreach-credentials', credentials);
+  return response.data;
+};
+
+export const loadOutreachCredentials = async (userId = 'default') => {
+  const response = await api.get('/outreach-credentials', { params: { userId } });
+  return response.data;
+};
+
 export default api;

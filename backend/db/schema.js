@@ -68,5 +68,23 @@ CREATE INDEX IF NOT EXISTS idx_leads_ai_score ON leads(ai_score);
 CREATE INDEX IF NOT EXISTS idx_leads_created_at ON leads(created_at);
 CREATE INDEX IF NOT EXISTS idx_jobs_status ON scrape_jobs(status);
 CREATE INDEX IF NOT EXISTS idx_job_logs_job_id ON job_logs(job_id);
+
+-- Per-user outreach credentials
+CREATE TABLE IF NOT EXISTS outreach_credentials (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id TEXT UNIQUE NOT NULL DEFAULT 'default',
+  ig_access_token TEXT DEFAULT '',
+  ig_business_id TEXT DEFAULT '',
+  fb_page_id TEXT DEFAULT '',
+  fb_page_token TEXT DEFAULT '',
+  smtp_host TEXT DEFAULT '',
+  smtp_port INTEGER DEFAULT 587,
+  smtp_user TEXT DEFAULT '',
+  smtp_pass TEXT DEFAULT '',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_outreach_credentials_user ON outreach_credentials(user_id);
   `;
 };

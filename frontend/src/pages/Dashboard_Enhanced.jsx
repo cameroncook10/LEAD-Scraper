@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Zap, TrendingUp, Users, Activity, ArrowRight, 
   Search, Inbox, Settings, Target, 
@@ -6,7 +6,7 @@ import {
   ArrowLeft, Instagram, Facebook, Mail, Globe
 } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { startScrape } from '../services/api';
+import { startScrape, saveOutreachCredentials, loadOutreachCredentials } from '../services/api';
 
 /* ════════════════════════════════════════════════
    DASHBOARD — Premium Glass Design System
@@ -62,9 +62,40 @@ function DashboardEnhanced() {
 
   // Outreach channel config
   const [outreach, setOutreach] = useState({
-    igToken: '', fbPageId: '', fbToken: '',
+    igToken: '', igBusinessId: '', fbPageId: '', fbToken: '',
     smtpHost: '', smtpPort: '587', smtpUser: '', smtpPass: ''
   });
+  const [connected, setConnected] = useState({ instagram: false, facebook: false, email: false });
+  const [savingOutreach, setSavingOutreach] = useState(false);
+  const [outreachMsg, setOutreachMsg] = useState(null);
+
+  // Load saved credentials on mount
+  useEffect(() => {
+    loadOutreachCredentials().then(data => {
+      if (data.connected) setConnected(data.connected);
+      if (data.email) setOutreach(o => ({ ...o, smtpHost: data.email.smtpHost, smtpPort: data.email.smtpPort, smtpUser: data.email.smtpUser }));
+      if (data.facebook) setOutreach(o => ({ ...o, fbPageId: data.facebook.pageId }));
+      if (data.instagram) setOutreach(o => ({ ...o, igBusinessId: data.instagram.businessId }));
+    }).catch(() => {});
+  }, []);
+
+  const handleSaveOutreach = async () => {
+    setSavingOutreach(true);
+    setOutreachMsg(null);
+    try {
+      await saveOutreachCredentials({
+        instagram: { accessToken: outreach.igToken, businessId: outreach.igBusinessId },
+        facebook: { pageId: outreach.fbPageId, pageToken: outreach.fbToken },
+        email: { smtpHost: outreach.smtpHost, smtpPort: outreach.smtpPort, smtpUser: outreach.smtpUser, smtpPass: outreach.smtpPass },
+      });
+      setOutreachMsg({ type: 'success', text: 'Outreach credentials saved!' });
+      // Refresh connection status
+      const data = await loadOutreachCredentials();
+      if (data.connected) setConnected(data.connected);
+    } catch (err) {
+      setOutreachMsg({ type: 'error', text: err.response?.data?.error || 'Failed to save credentials' });
+    } finally { setSavingOutreach(false); }
+  };
 
   const tabs = [
     { name: 'Overview', icon: <BarChart3 className="w-5 h-5" /> },
@@ -487,38 +518,50 @@ function DashboardEnhanced() {
               {/* Outreach Channels */}
               <Card className="!p-8" mesh="mesh-violet">
                 <h3 className="text-lg font-semibold text-white mb-2 pb-4 border-b border-white/[0.06]">
-                  <span className="gradient-text-cyan">Connected</span> Outreach Channels
+                  <span className="gradient-text-cyan">Your</span> Outreach Channels
                 </h3>
-                <p className="text-gray-500 text-sm mb-6">Configure your Instagram, Facebook, and Email credentials to enable automated outreach.</p>
+                <p className="text-gray-500 text-sm mb-6">Connect your own Instagram, Facebook, and Email to send DMs and emails from your accounts.</p>
                 
                 <div className="space-y-4">
                   {/* Instagram */}
                   <div className="glass-liquid rounded-xl p-5 space-y-3">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center">
-                        <Instagram className="w-5 h-5 text-white" />
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center">
+                          <Instagram className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                          <div className="font-semibold text-white text-sm">Instagram DM</div>
+                          <div className="text-xs text-gray-500">Send DMs from your business account</div>
+                        </div>
                       </div>
-                      <div>
-                        <div className="font-semibold text-white text-sm">Instagram DM</div>
-                        <div className="text-xs text-gray-500">Requires Facebook Developer App + Page Token</div>
-                      </div>
+                      {connected.instagram && <span className="text-xs font-bold px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">Connected</span>}
                     </div>
-                    <input type="password" placeholder="Page Access Token" value={outreach.igToken}
-                      onChange={e => setOutreach(o => ({ ...o, igToken: e.target.value }))}
-                      className="w-full glass rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/50 border border-white/[0.06] placeholder-gray-600"
-                    />
+                    <div className="grid grid-cols-2 gap-3">
+                      <input type="text" placeholder="Business Account ID" value={outreach.igBusinessId}
+                        onChange={e => setOutreach(o => ({ ...o, igBusinessId: e.target.value }))}
+                        className="w-full glass rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/50 border border-white/[0.06] placeholder-gray-600"
+                      />
+                      <input type="password" placeholder="Page Access Token" value={outreach.igToken}
+                        onChange={e => setOutreach(o => ({ ...o, igToken: e.target.value }))}
+                        className="w-full glass rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/50 border border-white/[0.06] placeholder-gray-600"
+                      />
+                    </div>
                   </div>
 
                   {/* Facebook */}
                   <div className="glass-liquid rounded-xl p-5 space-y-3">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center">
-                        <Facebook className="w-5 h-5 text-white" />
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center">
+                          <Facebook className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                          <div className="font-semibold text-white text-sm">Facebook Messenger</div>
+                          <div className="text-xs text-gray-500">Send messages from your Facebook page</div>
+                        </div>
                       </div>
-                      <div>
-                        <div className="font-semibold text-white text-sm">Facebook Messenger</div>
-                        <div className="text-xs text-gray-500">Requires Page ID and Page Access Token</div>
-                      </div>
+                      {connected.facebook && <span className="text-xs font-bold px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">Connected</span>}
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <input type="text" placeholder="Page ID" value={outreach.fbPageId}
@@ -534,17 +577,20 @@ function DashboardEnhanced() {
 
                   {/* Email (SMTP) */}
                   <div className="glass-liquid rounded-xl p-5 space-y-3">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
-                        <Mail className="w-5 h-5 text-white" />
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
+                          <Mail className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                          <div className="font-semibold text-white text-sm">Email (SMTP)</div>
+                          <div className="text-xs text-gray-500">Send emails from your company email account</div>
+                        </div>
                       </div>
-                      <div>
-                        <div className="font-semibold text-white text-sm">Email (SMTP)</div>
-                        <div className="text-xs text-gray-500">Gmail App Password, Outlook, or custom SMTP</div>
-                      </div>
+                      {connected.email && <span className="text-xs font-bold px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">Connected</span>}
                     </div>
                     <div className="grid grid-cols-2 gap-3">
-                      <input type="text" placeholder="SMTP Host" value={outreach.smtpHost}
+                      <input type="text" placeholder="SMTP Host (e.g. smtp.gmail.com)" value={outreach.smtpHost}
                         onChange={e => setOutreach(o => ({ ...o, smtpHost: e.target.value }))}
                         className="w-full glass rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/50 border border-white/[0.06] placeholder-gray-600"
                       />
@@ -554,11 +600,11 @@ function DashboardEnhanced() {
                       />
                     </div>
                     <div className="grid grid-cols-2 gap-3">
-                      <input type="text" placeholder="Username / Email" value={outreach.smtpUser}
+                      <input type="text" placeholder="Your Email Address" value={outreach.smtpUser}
                         onChange={e => setOutreach(o => ({ ...o, smtpUser: e.target.value }))}
                         className="w-full glass rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/50 border border-white/[0.06] placeholder-gray-600"
                       />
-                      <input type="password" placeholder="Password / App Password" value={outreach.smtpPass}
+                      <input type="password" placeholder="App Password" value={outreach.smtpPass}
                         onChange={e => setOutreach(o => ({ ...o, smtpPass: e.target.value }))}
                         className="w-full glass rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/50 border border-white/[0.06] placeholder-gray-600"
                       />
@@ -566,7 +612,16 @@ function DashboardEnhanced() {
                   </div>
                 </div>
 
-                <button className="btn-primary px-6 py-2.5 rounded-xl text-sm mt-6">Save Outreach Settings</button>
+                {outreachMsg && (
+                  <div className={`mt-4 p-3 rounded-xl text-sm ${outreachMsg.type === 'success' ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400' : 'bg-red-500/10 border border-red-500/20 text-red-400'}`}>
+                    {outreachMsg.text}
+                  </div>
+                )}
+
+                <button onClick={handleSaveOutreach} disabled={savingOutreach}
+                  className={`mt-6 px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${savingOutreach ? 'bg-white/5 text-gray-500 cursor-not-allowed' : 'btn-primary shadow-lg shadow-cyan-500/20'}`}>
+                  {savingOutreach ? 'Saving...' : 'Save Outreach Settings'}
+                </button>
               </Card>
             </div>
           )}
