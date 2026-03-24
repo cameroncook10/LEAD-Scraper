@@ -297,21 +297,6 @@ function DashboardEnhanced() {
     if (hasSubscription) localStorage.setItem('agentlead_subscribed', 'true');
   }, [hasSubscription]);
 
-  // OAuth Connect handler
-  const handleOAuthConnect = async (provider) => {
-    try {
-      const res = await fetch(`/api/auth/${provider}/connect`);
-      const data = await res.json();
-      if (data.redirectUrl) {
-        window.location.href = data.redirectUrl;
-      } else {
-        setOutreachMsg({ type: 'error', text: data.error || `Failed to start ${provider} OAuth` });
-      }
-    } catch (err) {
-      setOutreachMsg({ type: 'error', text: `Failed to connect ${provider}` });
-    }
-  };
-
   const handleSaveOutreach = async () => {
     setSavingOutreach(true);
     setOutreachMsg(null);
@@ -345,15 +330,16 @@ function DashboardEnhanced() {
   const activeChartData = emptyChart[timeFilter];
 
   // ── Leads from Supabase ──
+  const getLeadStatus = (aiScore) => aiScore >= 80 ? 'Hot' : aiScore >= 50 ? 'Warm' : 'Cold';
+
   const filteredLeads = realLeads.filter(lead => {
     const q = searchQuery.toLowerCase();
-    const matchSearch = lead.name?.toLowerCase().includes(q) || lead.industry?.toLowerCase().includes(q) || lead.description?.toLowerCase().includes(q);
-    const leadStatus = lead.quality_score >= 0.85 ? 'Hot' : lead.quality_score >= 0.6 ? 'Warm' : 'Cold';
+    const matchSearch = lead.name?.toLowerCase().includes(q) || lead.industry?.toLowerCase().includes(q) || lead.description?.toLowerCase().includes(q)
+      || lead.ai_category?.toLowerCase().includes(q) || lead.email?.toLowerCase().includes(q) || lead.business_type?.toLowerCase().includes(q);
+    const leadStatus = getLeadStatus(lead.ai_score || 0);
     const matchStatus = leadFilter === 'All' || leadStatus === leadFilter;
     return matchSearch && matchStatus;
   });
-
-  const getLeadStatus = (score) => score >= 0.85 ? 'Hot' : score >= 0.6 ? 'Warm' : 'Cold';
 
   return (
     <div className="min-h-screen bg-[#050505] text-white flex overflow-hidden noise-overlay">
@@ -558,13 +544,13 @@ function DashboardEnhanced() {
                 ) : (
                   <div className="space-y-2">
                     {filteredLeads.slice(0, 4).map(lead => {
-                      const score = Math.round((lead.quality_score || 0) * 100);
-                      const status = getLeadStatus(lead.quality_score || 0);
+                      const score = lead.ai_score || 0;
+                      const status = getLeadStatus(score);
                       return (
                         <div key={lead.id} className="flex items-center justify-between p-4 glass-liquid rounded-xl transition-all hover:shadow-lg hover:shadow-cyan-500/5">
                           <div>
-                            <div className="font-semibold text-white">{lead.name || lead.business_name}</div>
-                            <div className="text-xs text-gray-500">{lead.location || lead.city} · {lead.industry || lead.category}</div>
+                            <div className="font-semibold text-white">{lead.name}</div>
+                            <div className="text-xs text-gray-500">{lead.address || lead.location || '—'} · {lead.ai_category || lead.business_type || '—'}</div>
                           </div>
                           <div className="flex items-center gap-3">
                             <span className="font-mono text-cyan-400 font-bold text-sm">{score}%</span>
@@ -620,9 +606,9 @@ function DashboardEnhanced() {
                         const status = getLeadStatus(lead.quality_score || 0);
                         return (
                           <tr key={lead.id} className="border-b border-white/[0.04] hover:bg-white/[0.02] transition cursor-pointer">
-                            <td className="px-6 py-4 font-semibold text-white">{lead.name || lead.business_name}</td>
-                            <td className="px-6 py-4 text-gray-500 text-xs max-w-xs truncate">{lead.description || lead.snippet}</td>
-                            <td className="px-6 py-4 text-gray-400">{lead.location || lead.city}</td>
+                            <td className="px-6 py-4 font-semibold text-white">{lead.name}</td>
+                            <td className="px-6 py-4 text-gray-500 text-xs max-w-xs truncate">{lead.business_type || lead.ai_category || '—'}</td>
+                            <td className="px-6 py-4 text-gray-400">{lead.address || '—'}</td>
                             <td className="px-6 py-4 font-mono text-cyan-400 font-bold">{score}%</td>
                             <td className="px-6 py-4">
                               <span className={`px-3 py-1 rounded-full text-xs font-bold ${status === 'Hot' ? 'bg-red-500/15 text-red-400' : status === 'Warm' ? 'bg-amber-500/15 text-amber-400' : 'bg-blue-500/15 text-blue-400'}`}>
@@ -921,13 +907,13 @@ function DashboardEnhanced() {
           {/* ═══════════════ ANALYTICS ═══════════════ */}
           {activeTab === 'Analytics' && (() => {
             const totalScraped = realLeads.length;
-            const qualified = realLeads.filter(l => (l.quality_score || 0) >= 0.5).length;
+            const qualified = realLeads.filter(l => (l.ai_score || 0) >= 50).length;
             const contacted = leadStats.dmsSent + leadStats.emailsSent;
             const replied = leadStats.conversions;
             const maxVal = Math.max(totalScraped, 1);
             const industries = {};
             realLeads.forEach(l => {
-              const ind = l.industry || l.category || 'Unknown';
+              const ind = l.ai_category || l.business_type || 'Unknown';
               industries[ind] = (industries[ind] || 0) + 1;
             });
             const topIndustries = Object.entries(industries).sort((a, b) => b[1] - a[1]).slice(0, 8);
