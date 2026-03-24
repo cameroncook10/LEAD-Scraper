@@ -135,7 +135,7 @@ export default function Landing({ onGetStarted }) {
               </div>
               <h3 className="text-xl font-bold mb-2">Lightning-Fast Scraping</h3>
               <p className="text-slate-400 mb-6">
-                Scrape up to 2,500 leads per minute from public sources. Real-time monitoring and pause controls.
+                Scrape leads at high speed from public sources. Real-time monitoring and pause controls.
               </p>
               <ul className="space-y-2 text-sm text-slate-300">
                 <li className="flex items-center space-x-2">
@@ -210,12 +210,12 @@ export default function Landing({ onGetStarted }) {
               </div>
               <h3 className="text-xl font-bold mb-2">CRM Integration</h3>
               <p className="text-slate-400 mb-6">
-                One-click sync to Salesforce, HubSpot, Pipedrive, and 100+ other tools. Stay in sync always.
+                Sync to popular CRM tools like Salesforce, HubSpot, and Pipedrive. Stay in sync always.
               </p>
               <ul className="space-y-2 text-sm text-slate-300">
                 <li className="flex items-center space-x-2">
                   <Check className="w-4 h-4 text-green-500" />
-                  <span>100+ integrations</span>
+                  <span>CRM integrations</span>
                 </li>
                 <li className="flex items-center space-x-2">
                   <Check className="w-4 h-4 text-green-500" />
@@ -473,8 +473,8 @@ export default function Landing({ onGetStarted }) {
       <section className="py-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="text-center space-y-4 mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold">Trusted by Sales Leaders</h2>
-            <p className="text-xl text-slate-400">Companies generating 10x more qualified leads</p>
+            <h2 className="text-4xl md:text-5xl font-bold">What Users Say</h2>
+            <p className="text-xl text-slate-400">Hear from early adopters using Agent Lead</p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
@@ -530,7 +530,7 @@ export default function Landing({ onGetStarted }) {
               },
               {
                 q: 'Can I integrate with my CRM?',
-                a: 'Absolutely. We integrate with Salesforce, HubSpot, Pipedrive, and 100+ other tools. Check our integrations page.'
+                a: 'Yes! We integrate with Salesforce, HubSpot, Pipedrive, and more. Check our integrations page.'
               },
               {
                 q: 'What if I need more leads than my plan allows?',
@@ -566,7 +566,7 @@ export default function Landing({ onGetStarted }) {
         <div className="max-w-4xl mx-auto bg-gradient-to-r from-blue-600 to-cyan-600 rounded-3xl p-12 text-center space-y-6">
           <h2 className="text-4xl md:text-5xl font-bold">Ready to Get Started?</h2>
           <p className="text-xl text-blue-100 max-w-2xl mx-auto">
-            Join 500+ companies generating qualified leads with Lead Scraper.
+            Start generating qualified leads with Agent Lead.
           </p>
           <form onSubmit={handleEmailSignup} className="max-w-md mx-auto space-y-3">
             <input

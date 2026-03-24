@@ -22,7 +22,7 @@ const industries = [
   {
     icon: Wrench,
     name: "HVAC Contractors",
-    leads: "2,400+",
+    leads: "High",
     desc: "Homeowners needing heating, cooling & air quality services",
     color: "from-orange-500 to-red-500",
     preset: "hvac",
@@ -30,7 +30,7 @@ const industries = [
   {
     icon: Home,
     name: "Roofing Companies",
-    leads: "3,100+",
+    leads: "High",
     desc: "Storm damage, re-roofs, inspections & gutter installs",
     color: "from-amber-500 to-orange-500",
     preset: "roofing",
@@ -38,7 +38,7 @@ const industries = [
   {
     icon: Droplets,
     name: "Plumbing Services",
-    leads: "1,800+",
+    leads: "High",
     desc: "Emergency plumbing, remodels & commercial plumbing leads",
     color: "from-blue-500 to-cyan-500",
     preset: "plumbing",
@@ -46,7 +46,7 @@ const industries = [
   {
     icon: Zap,
     name: "Electricians",
-    leads: "1,500+",
+    leads: "Medium",
     desc: "Residential & commercial electrical work, panel upgrades",
     color: "from-yellow-500 to-amber-500",
     preset: "electrical",
@@ -54,7 +54,7 @@ const industries = [
   {
     icon: TreePine,
     name: "Landscaping & Lawn Care",
-    leads: "2,800+",
+    leads: "High",
     desc: "Lawn maintenance, hardscaping & landscape design",
     color: "from-green-500 to-emerald-500",
     preset: "landscaping",
@@ -62,7 +62,7 @@ const industries = [
   {
     icon: PaintBucket,
     name: "Painting Contractors",
-    leads: "1,200+",
+    leads: "Medium",
     desc: "Interior, exterior & commercial painting services",
     color: "from-violet-500 to-purple-500",
     preset: "painting",
@@ -70,7 +70,7 @@ const industries = [
   {
     icon: Shield,
     name: "Pest Control",
-    leads: "900+",
+    leads: "Medium",
     desc: "Termite, rodent & general pest management",
     color: "from-red-500 to-pink-500",
     preset: "pest_control",
@@ -78,7 +78,7 @@ const industries = [
   {
     icon: Stethoscope,
     name: "Home Healthcare",
-    leads: "1,600+",
+    leads: "Medium",
     desc: "In-home nursing, elder care & physical therapy",
     color: "from-teal-500 to-cyan-500",
     preset: "healthcare",
@@ -86,7 +86,7 @@ const industries = [
   {
     icon: Scale,
     name: "Law Firms",
-    leads: "2,200+",
+    leads: "High",
     desc: "Personal injury, family law & estate planning leads",
     color: "from-slate-400 to-gray-500",
     preset: "legal",
@@ -94,7 +94,7 @@ const industries = [
   {
     icon: Car,
     name: "Auto Detailing",
-    leads: "700+",
+    leads: "Medium",
     desc: "Mobile detailing, ceramic coating & paint correction",
     color: "from-cyan-500 to-blue-500",
     preset: "auto_detailing",
@@ -102,7 +102,7 @@ const industries = [
   {
     icon: Dog,
     name: "Pet Services",
-    leads: "1,100+",
+    leads: "Medium",
     desc: "Grooming, dog walking, pet sitting & pet training",
     color: "from-pink-500 to-rose-500",
     preset: "pet_services",
@@ -110,7 +110,7 @@ const industries = [
   {
     icon: Building2,
     name: "Real Estate Agents",
-    leads: "4,500+",
+    leads: "High",
     desc: "Buyer leads, seller leads & commercial property",
     color: "from-emerald-500 to-teal-500",
     preset: "real_estate",
@@ -178,7 +178,7 @@ export function IndustriesSection() {
                         <Icon className="w-5 h-5 text-white" />
                       </div>
                       <span className="text-xs font-mono text-cyan-400/80 bg-cyan-500/10 px-2.5 py-1 rounded-full border border-cyan-500/20">
-                        {industry.leads} /mo
+                        {industry.leads} volume
                       </span>
                     </div>
 

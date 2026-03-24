@@ -10,7 +10,7 @@ const features = [
     mesh: "mesh-cyan",
     accent: "from-cyan-500 to-blue-500",
     accentDot: "bg-cyan-400",
-    bullets: ["2,500+ leads per minute", "Multi-source extraction", "Auto rate-limiting"],
+    bullets: ["High-speed extraction", "Multi-source extraction", "Auto rate-limiting"],
     span: "bento-2x", // wide card
   },
   {

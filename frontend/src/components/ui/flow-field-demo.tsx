@@ -117,9 +117,9 @@ export function HeroSection() {
           className="flex flex-wrap items-center justify-center gap-8 text-center"
         >
           {[
-            { value: "2,500+", label: "Leads Per Minute" },
-            { value: "94%", label: "AI Accuracy" },
-            { value: "10x", label: "ROI Average" },
+            { value: "Fast", label: "Extraction Speed" },
+            { value: "AI", label: "Lead Scoring" },
+            { value: "Auto", label: "Outreach" },
           ].map((stat, i) => (
             <React.Fragment key={i}>
               {i > 0 && (

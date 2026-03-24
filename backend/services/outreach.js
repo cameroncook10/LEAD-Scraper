@@ -1,35 +1,38 @@
 /**
- * Outreach Service — Instagram DM, Facebook Messenger, Email (SMTP)
+ * Outreach Service — Instagram DM, Facebook Messenger, Email
  * 
- * Each channel reads its credentials from environment variables.
- * The frontend Settings tab lets users input these credentials,
- * but the backend stores them in .env / Supabase secrets for security.
+ * Instagram/Facebook tokens can stay in .env (user's preference).
+ * Email is proxied through the Supabase `send-email` edge function
+ * so SMTP credentials are stored as Supabase secrets.
+ * 
+ * Setup:
+ *   Instagram/Facebook: Set tokens in backend/.env
+ *   Email: supabase secrets set SMTP_HOST=... SMTP_USER=... SMTP_PASS=...
+ *          supabase functions deploy send-email
  */
 
-import nodemailer from 'nodemailer';
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 
 // ══════════════════════════════════════════════
 // Instagram DM (via Instagram Graph API)
-// Requires: INSTAGRAM_ACCESS_TOKEN, recipient IGSID
+// Token stored locally in .env (user preference)
 // ══════════════════════════════════════════════
 export async function sendInstagramDM(recipientId, messageText) {
   const token = process.env.INSTAGRAM_ACCESS_TOKEN;
-  if (!token) throw new Error('INSTAGRAM_ACCESS_TOKEN not configured');
+  if (!token) throw new Error('INSTAGRAM_ACCESS_TOKEN not configured in .env');
 
-  const res = await fetch(
-    `https://graph.facebook.com/v19.0/me/messages`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        recipient: { id: recipientId },
-        message: { text: messageText },
-        access_token: token,
-        messaging_type: 'MESSAGE_TAG',
-        tag: 'CONFIRMED_EVENT_UPDATE'
-      })
-    }
-  );
+  const res = await fetch('https://graph.facebook.com/v19.0/me/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      recipient: { id: recipientId },
+      message: { text: messageText },
+      access_token: token,
+      messaging_type: 'MESSAGE_TAG',
+      tag: 'CONFIRMED_EVENT_UPDATE',
+    }),
+  });
 
   const data = await res.json();
   if (!res.ok) throw new Error(`Instagram API error: ${data.error?.message || res.statusText}`);
@@ -38,11 +41,11 @@ export async function sendInstagramDM(recipientId, messageText) {
 
 // ══════════════════════════════════════════════
 // Facebook Messenger (via Send API)
-// Requires: FACEBOOK_PAGE_ACCESS_TOKEN, FACEBOOK_PAGE_ID
+// Token stored locally in .env (user preference)
 // ══════════════════════════════════════════════
 export async function sendFacebookMessage(recipientPsid, messageText) {
   const token = process.env.FACEBOOK_PAGE_ACCESS_TOKEN;
-  if (!token) throw new Error('FACEBOOK_PAGE_ACCESS_TOKEN not configured');
+  if (!token) throw new Error('FACEBOOK_PAGE_ACCESS_TOKEN not configured in .env');
 
   const res = await fetch(
     `https://graph.facebook.com/v19.0/me/messages?access_token=${token}`,
@@ -52,8 +55,8 @@ export async function sendFacebookMessage(recipientPsid, messageText) {
       body: JSON.stringify({
         recipient: { id: recipientPsid },
         message: { text: messageText },
-        messaging_type: 'RESPONSE'
-      })
+        messaging_type: 'RESPONSE',
+      }),
     }
   );
 
@@ -63,33 +66,24 @@ export async function sendFacebookMessage(recipientPsid, messageText) {
 }
 
 // ══════════════════════════════════════════════
-// Email (via Nodemailer SMTP)
-// Requires: SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS
+// Email — Proxied through Supabase Edge Function
+// SMTP credentials stored in Supabase secrets
 // ══════════════════════════════════════════════
 export async function sendEmail({ to, subject, text, html }) {
-  const host = process.env.SMTP_HOST;
-  const port = parseInt(process.env.SMTP_PORT || '587');
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
-
-  if (!host || !user || !pass) {
-    throw new Error('SMTP credentials not fully configured (SMTP_HOST, SMTP_USER, SMTP_PASS)');
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    throw new Error('SUPABASE_URL and SUPABASE_ANON_KEY must be set in .env');
   }
 
-  const transporter = nodemailer.createTransport({
-    host,
-    port,
-    secure: port === 465,
-    auth: { user, pass }
+  const res = await fetch(`${SUPABASE_URL}/functions/v1/send-email`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+    },
+    body: JSON.stringify({ to, subject, text, html }),
   });
 
-  const info = await transporter.sendMail({
-    from: `"Agent Lead" <${user}>`,
-    to,
-    subject,
-    text,
-    html: html || undefined
-  });
-
-  return { messageId: info.messageId, accepted: info.accepted };
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Email edge function failed');
+  return data;
 }

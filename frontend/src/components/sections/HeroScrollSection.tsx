@@ -39,10 +39,10 @@ export function HeroScrollSection() {
           {/* Stats row */}
           <div className="grid grid-cols-4 gap-3 mb-6">
             {[
-              { label: "Leads Scraped", value: "12,847", change: "+23%" },
-              { label: "DMs Sent", value: "3,291", change: "+18%" },
-              { label: "Comments Posted", value: "5,102", change: "+31%" },
-              { label: "Conversions", value: "847", change: "+42%" },
+              { label: "Leads Scraped", value: "—", change: "" },
+              { label: "DMs Sent", value: "—", change: "" },
+              { label: "Emails Sent", value: "—", change: "" },
+              { label: "Conversions", value: "—", change: "" },
             ].map((stat, i) => (
               <div key={i} className="bg-gray-900 rounded-lg p-3 border border-gray-800">
                 <div className="text-[10px] text-gray-500 uppercase tracking-wider">{stat.label}</div>
@@ -71,9 +71,7 @@ export function HeroScrollSection() {
             <div className="text-sm text-gray-400 mb-3">Recent Leads</div>
             <div className="space-y-2">
               {[
-                { name: "Johnson HVAC", loc: "Atlanta, GA", score: 94, status: "Hot" },
-                { name: "Prime Landscaping", loc: "Charlotte, NC", score: 87, status: "Warm" },
-                { name: "Elite Plumbing", loc: "Richmond, VA", score: 91, status: "Hot" },
+                { name: "Your first lead", loc: "Start a campaign", score: "--", status: "New" },
               ].map((lead, i) => (
                 <div key={i} className="flex items-center justify-between py-2 border-b border-gray-800 last:border-0">
                   <div>
@@ -81,8 +79,8 @@ export function HeroScrollSection() {
                     <div className="text-xs text-gray-500">{lead.loc}</div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="text-xs text-cyan-400 font-mono">{lead.score}%</span>
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${lead.status === "Hot" ? "bg-red-500/10 text-red-400" : "bg-amber-500/10 text-amber-400"}`}>
+                    <span className="text-xs text-cyan-400 font-mono">{lead.score}</span>
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400">
                       {lead.status}
                     </span>
                   </div>
