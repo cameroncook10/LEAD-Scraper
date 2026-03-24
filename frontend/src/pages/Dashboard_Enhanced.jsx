@@ -69,7 +69,7 @@ function DashboardEnhanced() {
   const [savingOutreach, setSavingOutreach] = useState(false);
   const [outreachMsg, setOutreachMsg] = useState(null);
 
-  // Load saved credentials on mount
+  // Load saved credentials on mount + check OAuth callback params
   useEffect(() => {
     loadOutreachCredentials().then(data => {
       if (data.connected) setConnected(data.connected);
@@ -77,7 +77,45 @@ function DashboardEnhanced() {
       if (data.facebook) setOutreach(o => ({ ...o, fbPageId: data.facebook.pageId }));
       if (data.instagram) setOutreach(o => ({ ...o, igBusinessId: data.instagram.businessId }));
     }).catch(() => {});
+
+    // Check for OAuth callback params
+    const connectedProvider = searchParams.get('connected');
+    const oauthError = searchParams.get('error');
+    if (connectedProvider) {
+      setOutreachMsg({ type: 'success', text: `${connectedProvider.charAt(0).toUpperCase() + connectedProvider.slice(1)} connected successfully!` });
+      setConnected(c => ({ ...c, [connectedProvider]: true }));
+    }
+    if (oauthError) {
+      setOutreachMsg({ type: 'error', text: `OAuth error: ${oauthError.replace(/_/g, ' ')}` });
+    }
+
+    // Check subscription status
+    const paymentStatus = searchParams.get('payment');
+    if (paymentStatus === 'success') setHasSubscription(true);
   }, []);
+
+  // Subscription paywall
+  const [hasSubscription, setHasSubscription] = useState(() => {
+    return localStorage.getItem('agentlead_subscribed') === 'true';
+  });
+  useEffect(() => {
+    if (hasSubscription) localStorage.setItem('agentlead_subscribed', 'true');
+  }, [hasSubscription]);
+
+  // OAuth Connect handler
+  const handleOAuthConnect = async (provider) => {
+    try {
+      const res = await fetch(`/api/auth/${provider}/connect`);
+      const data = await res.json();
+      if (data.redirectUrl) {
+        window.location.href = data.redirectUrl;
+      } else {
+        setOutreachMsg({ type: 'error', text: data.error || `Failed to start ${provider} OAuth` });
+      }
+    } catch (err) {
+      setOutreachMsg({ type: 'error', text: `Failed to connect ${provider}` });
+    }
+  };
 
   const handleSaveOutreach = async () => {
     setSavingOutreach(true);
@@ -140,7 +178,32 @@ function DashboardEnhanced() {
 
   return (
     <div className="min-h-screen bg-[#050505] text-white flex overflow-hidden noise-overlay">
-      {/* ══════ SIDEBAR ══════ */}
+      {/* ══════ SUBSCRIPTION PAYWALL ══════ */}
+      {!hasSubscription && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(5,5,5,0.92)' }}>
+          <div className="glass-liquid rounded-2xl p-10 max-w-md text-center border border-white/[0.06] shadow-2xl">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center mx-auto mb-6">
+              <Zap className="w-8 h-8 text-white" />
+            </div>
+            <h2 className="text-2xl font-bold text-white mb-2">Start Your 3-Day Free Trial</h2>
+            <p className="text-gray-400 text-sm mb-6 leading-relaxed">
+              Get full access to lead scraping, AI qualification, auto-DMs, and all dashboard features. Your card won't be charged until the trial ends.
+            </p>
+            <button
+              onClick={() => navigate('/#pricing')}
+              className="w-full py-3 rounded-xl font-semibold text-sm bg-gradient-to-r from-cyan-500 to-blue-500 text-white hover:shadow-lg hover:shadow-cyan-500/25 transition-all duration-300 mb-3"
+            >
+              View Plans & Start Trial
+            </button>
+            <button
+              onClick={() => navigate('/')}
+              className="w-full py-3 rounded-xl font-semibold text-sm bg-white/5 hover:bg-white/10 text-gray-400 border border-white/[0.06] transition-all duration-300"
+            >
+              ← Back to Site
+            </button>
+          </div>
+        </div>
+      )}
       <aside className="hidden md:flex flex-col w-64 glass-liquid border-r border-white/[0.06]">
         {/* Logo */}
         <div className="p-6 flex items-center gap-3 cursor-pointer" onClick={() => navigate('/')}>
@@ -537,16 +600,25 @@ function DashboardEnhanced() {
                       </div>
                       {connected.instagram && <span className="text-xs font-bold px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">Connected</span>}
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <input type="text" placeholder="Business Account ID" value={outreach.igBusinessId}
-                        onChange={e => setOutreach(o => ({ ...o, igBusinessId: e.target.value }))}
-                        className="w-full glass rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/50 border border-white/[0.06] placeholder-gray-600"
-                      />
-                      <input type="password" placeholder="Page Access Token" value={outreach.igToken}
-                        onChange={e => setOutreach(o => ({ ...o, igToken: e.target.value }))}
-                        className="w-full glass rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/50 border border-white/[0.06] placeholder-gray-600"
-                      />
-                    </div>
+                    {!connected.instagram && (
+                      <button onClick={() => handleOAuthConnect('instagram')}
+                        className="w-full py-2.5 rounded-lg text-sm font-semibold text-white bg-gradient-to-r from-pink-500 to-purple-600 hover:opacity-90 transition flex items-center justify-center gap-2">
+                        <Instagram className="w-4 h-4" /> Connect with Facebook (Instagram)
+                      </button>
+                    )}
+                    <details className="text-xs text-gray-600">
+                      <summary className="cursor-pointer hover:text-gray-400 transition">Or enter credentials manually</summary>
+                      <div className="grid grid-cols-2 gap-3 mt-3">
+                        <input type="text" placeholder="Business Account ID" value={outreach.igBusinessId}
+                          onChange={e => setOutreach(o => ({ ...o, igBusinessId: e.target.value }))}
+                          className="w-full glass rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/50 border border-white/[0.06] placeholder-gray-600"
+                        />
+                        <input type="password" placeholder="Page Access Token" value={outreach.igToken}
+                          onChange={e => setOutreach(o => ({ ...o, igToken: e.target.value }))}
+                          className="w-full glass rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/50 border border-white/[0.06] placeholder-gray-600"
+                        />
+                      </div>
+                    </details>
                   </div>
 
                   {/* Facebook */}
@@ -563,19 +635,28 @@ function DashboardEnhanced() {
                       </div>
                       {connected.facebook && <span className="text-xs font-bold px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">Connected</span>}
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <input type="text" placeholder="Page ID" value={outreach.fbPageId}
-                        onChange={e => setOutreach(o => ({ ...o, fbPageId: e.target.value }))}
-                        className="w-full glass rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/50 border border-white/[0.06] placeholder-gray-600"
-                      />
-                      <input type="password" placeholder="Page Access Token" value={outreach.fbToken}
-                        onChange={e => setOutreach(o => ({ ...o, fbToken: e.target.value }))}
-                        className="w-full glass rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/50 border border-white/[0.06] placeholder-gray-600"
-                      />
-                    </div>
+                    {!connected.facebook && (
+                      <button onClick={() => handleOAuthConnect('facebook')}
+                        className="w-full py-2.5 rounded-lg text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:opacity-90 transition flex items-center justify-center gap-2">
+                        <Facebook className="w-4 h-4" /> Connect with Facebook
+                      </button>
+                    )}
+                    <details className="text-xs text-gray-600">
+                      <summary className="cursor-pointer hover:text-gray-400 transition">Or enter credentials manually</summary>
+                      <div className="grid grid-cols-2 gap-3 mt-3">
+                        <input type="text" placeholder="Page ID" value={outreach.fbPageId}
+                          onChange={e => setOutreach(o => ({ ...o, fbPageId: e.target.value }))}
+                          className="w-full glass rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/50 border border-white/[0.06] placeholder-gray-600"
+                        />
+                        <input type="password" placeholder="Page Access Token" value={outreach.fbToken}
+                          onChange={e => setOutreach(o => ({ ...o, fbToken: e.target.value }))}
+                          className="w-full glass rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/50 border border-white/[0.06] placeholder-gray-600"
+                        />
+                      </div>
+                    </details>
                   </div>
 
-                  {/* Email (SMTP) */}
+                  {/* Email */}
                   <div className="glass-liquid rounded-xl p-5 space-y-3">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-3">
@@ -583,32 +664,41 @@ function DashboardEnhanced() {
                           <Mail className="w-5 h-5 text-white" />
                         </div>
                         <div>
-                          <div className="font-semibold text-white text-sm">Email (SMTP)</div>
+                          <div className="font-semibold text-white text-sm">Email</div>
                           <div className="text-xs text-gray-500">Send emails from your company email account</div>
                         </div>
                       </div>
                       {connected.email && <span className="text-xs font-bold px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">Connected</span>}
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <input type="text" placeholder="SMTP Host (e.g. smtp.gmail.com)" value={outreach.smtpHost}
-                        onChange={e => setOutreach(o => ({ ...o, smtpHost: e.target.value }))}
-                        className="w-full glass rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/50 border border-white/[0.06] placeholder-gray-600"
-                      />
-                      <input type="text" placeholder="Port (587)" value={outreach.smtpPort}
-                        onChange={e => setOutreach(o => ({ ...o, smtpPort: e.target.value }))}
-                        className="w-full glass rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/50 border border-white/[0.06] placeholder-gray-600"
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <input type="text" placeholder="Your Email Address" value={outreach.smtpUser}
-                        onChange={e => setOutreach(o => ({ ...o, smtpUser: e.target.value }))}
-                        className="w-full glass rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/50 border border-white/[0.06] placeholder-gray-600"
-                      />
-                      <input type="password" placeholder="App Password" value={outreach.smtpPass}
-                        onChange={e => setOutreach(o => ({ ...o, smtpPass: e.target.value }))}
-                        className="w-full glass rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/50 border border-white/[0.06] placeholder-gray-600"
-                      />
-                    </div>
+                    {!connected.email && (
+                      <button onClick={() => handleOAuthConnect('google')}
+                        className="w-full py-2.5 rounded-lg text-sm font-semibold text-white bg-gradient-to-r from-emerald-500 to-teal-600 hover:opacity-90 transition flex items-center justify-center gap-2">
+                        <Mail className="w-4 h-4" /> Connect with Google (Gmail)
+                      </button>
+                    )}
+                    <details className="text-xs text-gray-600">
+                      <summary className="cursor-pointer hover:text-gray-400 transition">Or enter SMTP credentials manually</summary>
+                      <div className="grid grid-cols-2 gap-3 mt-3">
+                        <input type="text" placeholder="SMTP Host (e.g. smtp.gmail.com)" value={outreach.smtpHost}
+                          onChange={e => setOutreach(o => ({ ...o, smtpHost: e.target.value }))}
+                          className="w-full glass rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/50 border border-white/[0.06] placeholder-gray-600"
+                        />
+                        <input type="text" placeholder="Port (587)" value={outreach.smtpPort}
+                          onChange={e => setOutreach(o => ({ ...o, smtpPort: e.target.value }))}
+                          className="w-full glass rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/50 border border-white/[0.06] placeholder-gray-600"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <input type="text" placeholder="Your Email Address" value={outreach.smtpUser}
+                          onChange={e => setOutreach(o => ({ ...o, smtpUser: e.target.value }))}
+                          className="w-full glass rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/50 border border-white/[0.06] placeholder-gray-600"
+                        />
+                        <input type="password" placeholder="App Password" value={outreach.smtpPass}
+                          onChange={e => setOutreach(o => ({ ...o, smtpPass: e.target.value }))}
+                          className="w-full glass rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/50 border border-white/[0.06] placeholder-gray-600"
+                        />
+                      </div>
+                    </details>
                   </div>
                 </div>
 

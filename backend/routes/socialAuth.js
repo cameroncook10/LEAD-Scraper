@@ -4,42 +4,41 @@
  * Handles Instagram and Facebook OAuth flows for per-user token management.
  * Users click "Connect Instagram/Facebook" → redirect to Meta OAuth → callback stores token.
  * 
+ * Now uses outreach_credentials table (already created) instead of api_keys.
+ * Works without requireAuth for the initial MVP — uses 'default' user.
+ * 
  * Routes:
- *   GET  /api/auth/instagram/connect   → Redirect to Meta OAuth
+ *   GET  /api/auth/instagram/connect   → Redirect URL for Meta OAuth
  *   GET  /api/auth/instagram/callback  → Exchange code for token, store in DB
- *   GET  /api/auth/facebook/connect    → Redirect to Meta OAuth
+ *   GET  /api/auth/facebook/connect    → Redirect URL for Meta OAuth
  *   GET  /api/auth/facebook/callback   → Exchange code for token, store in DB
- *   GET  /api/auth/connections         → List user's connected accounts
- *   DELETE /api/auth/disconnect/:provider → Remove a connection
+ *   GET  /api/auth/google/connect      → Redirect URL for Google OAuth (Gmail SMTP)
+ *   GET  /api/auth/google/callback     → Exchange code for Gmail send access
+ *   GET  /api/auth/status              → Connection status for all providers
  */
 import express from 'express';
-import { supabase } from '../server.js';
-import { requireAuth } from '../middleware/auth.js';
 
 const router = express.Router();
 
 const META_AUTH_URL = 'https://www.facebook.com/v21.0/dialog/oauth';
 const META_TOKEN_URL = 'https://graph.facebook.com/v21.0/oauth/access_token';
 const META_GRAPH_URL = 'https://graph.facebook.com/v21.0';
+const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
+const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
+
+const getAppUrl = () => process.env.APP_URL || 'http://localhost:3002';
+const getFrontendUrl = () => process.env.FRONTEND_URL || 'http://localhost:3001';
 
 // ═══════════════════════════════════════
 // Instagram OAuth
 // ═══════════════════════════════════════
 
-/**
- * GET /api/auth/instagram/connect
- * Redirects user to Facebook OAuth to authorize Instagram messaging
- */
-router.get('/instagram/connect', requireAuth, (req, res) => {
+router.get('/instagram/connect', (req, res) => {
   const appId = process.env.META_APP_ID;
-  const redirectUri = `${process.env.APP_URL || 'http://localhost:3002'}/api/auth/instagram/callback`;
-  
-  if (!appId) {
-    return res.status(500).json({ error: 'META_APP_ID not configured' });
-  }
+  if (!appId) return res.status(500).json({ error: 'META_APP_ID not configured. Set it in backend/.env' });
 
-  // Store user ID in state param so we know who connected after the redirect
-  const state = Buffer.from(JSON.stringify({ userId: req.user.userId })).toString('base64');
+  const redirectUri = `${getAppUrl()}/api/auth/instagram/callback`;
+  const state = Buffer.from(JSON.stringify({ userId: req.query.userId || 'default' })).toString('base64');
 
   const scopes = [
     'instagram_basic',
@@ -50,86 +49,60 @@ router.get('/instagram/connect', requireAuth, (req, res) => {
   ].join(',');
 
   const authUrl = `${META_AUTH_URL}?client_id=${appId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scopes}&response_type=code&state=${state}`;
-
   res.json({ redirectUrl: authUrl });
 });
 
-/**
- * GET /api/auth/instagram/callback
- * Facebook redirects here after user authorizes
- */
 router.get('/instagram/callback', async (req, res) => {
   const { code, state, error: oauthError } = req.query;
-
-  if (oauthError) {
-    return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3005'}/settings?error=oauth_denied`);
-  }
-
-  if (!code || !state) {
-    return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3005'}/settings?error=missing_params`);
+  if (oauthError || !code || !state) {
+    return res.redirect(`${getFrontendUrl()}/dashboard?tab=Settings&error=instagram_denied`);
   }
 
   try {
-    // Decode user ID from state
     const { userId } = JSON.parse(Buffer.from(state, 'base64').toString());
+    const supabase = req.app.locals.supabase;
 
     // 1. Exchange code for short-lived token
-    const tokenResponse = await fetch(`${META_TOKEN_URL}?` + new URLSearchParams({
+    const tokenRes = await fetch(`${META_TOKEN_URL}?` + new URLSearchParams({
       client_id: process.env.META_APP_ID,
       client_secret: process.env.META_APP_SECRET,
-      redirect_uri: `${process.env.APP_URL || 'http://localhost:3002'}/api/auth/instagram/callback`,
+      redirect_uri: `${getAppUrl()}/api/auth/instagram/callback`,
       code,
     }));
-
-    const tokenData = await tokenResponse.json();
+    const tokenData = await tokenRes.json();
     if (tokenData.error) throw new Error(tokenData.error.message);
 
     // 2. Exchange for long-lived token (60 days)
-    const longLivedResponse = await fetch(`${META_TOKEN_URL}?` + new URLSearchParams({
+    const longRes = await fetch(`${META_TOKEN_URL}?` + new URLSearchParams({
       grant_type: 'fb_exchange_token',
       client_id: process.env.META_APP_ID,
       client_secret: process.env.META_APP_SECRET,
       fb_exchange_token: tokenData.access_token,
     }));
-
-    const longLivedData = await longLivedResponse.json();
-    if (longLivedData.error) throw new Error(longLivedData.error.message);
+    const longData = await longRes.json();
+    if (longData.error) throw new Error(longData.error.message);
 
     // 3. Get Instagram Business Account ID
-    const accountsResponse = await fetch(
-      `${META_GRAPH_URL}/me/accounts?fields=id,name,instagram_business_account&access_token=${longLivedData.access_token}`
-    );
-    const accountsData = await accountsResponse.json();
-    
-    const igAccount = accountsData.data?.find(p => p.instagram_business_account);
-    const igBusinessId = igAccount?.instagram_business_account?.id;
+    const acctRes = await fetch(`${META_GRAPH_URL}/me/accounts?fields=id,name,instagram_business_account&access_token=${longData.access_token}`);
+    const acctData = await acctRes.json();
+    const igPage = acctData.data?.find(p => p.instagram_business_account);
+    const igBusinessId = igPage?.instagram_business_account?.id || '';
 
-    // 4. Store in database
-    const { error: dbError } = await supabase
-      .from('api_keys')
+    // 4. Store in outreach_credentials
+    await supabase
+      .from('outreach_credentials')
       .upsert({
         user_id: userId,
-        provider: 'instagram',
-        encrypted_key: longLivedData.access_token,
-        metadata: {
-          ig_business_id: igBusinessId,
-          page_id: igAccount?.id,
-          page_name: igAccount?.name,
-          expires_at: new Date(Date.now() + (longLivedData.expires_in || 5184000) * 1000).toISOString(),
-          connected_at: new Date().toISOString(),
-        },
+        ig_access_token: longData.access_token,
+        ig_business_id: igBusinessId,
         updated_at: new Date().toISOString(),
-      }, { onConflict: 'user_id,provider' });
-
-    if (dbError) throw dbError;
+      }, { onConflict: 'user_id' });
 
     console.log(`[OAuth] Instagram connected for user ${userId} (IG: ${igBusinessId})`);
-
-    // Redirect back to frontend with success
-    res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3005'}/settings?connected=instagram`);
+    res.redirect(`${getFrontendUrl()}/dashboard?tab=Settings&connected=instagram`);
   } catch (error) {
     console.error('[OAuth] Instagram callback error:', error);
-    res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3005'}/settings?error=instagram_failed`);
+    res.redirect(`${getFrontendUrl()}/dashboard?tab=Settings&error=instagram_failed`);
   }
 });
 
@@ -137,18 +110,12 @@ router.get('/instagram/callback', async (req, res) => {
 // Facebook OAuth
 // ═══════════════════════════════════════
 
-/**
- * GET /api/auth/facebook/connect
- */
-router.get('/facebook/connect', requireAuth, (req, res) => {
+router.get('/facebook/connect', (req, res) => {
   const appId = process.env.META_APP_ID;
-  const redirectUri = `${process.env.APP_URL || 'http://localhost:3002'}/api/auth/facebook/callback`;
+  if (!appId) return res.status(500).json({ error: 'META_APP_ID not configured. Set it in backend/.env' });
 
-  if (!appId) {
-    return res.status(500).json({ error: 'META_APP_ID not configured' });
-  }
-
-  const state = Buffer.from(JSON.stringify({ userId: req.user.userId })).toString('base64');
+  const redirectUri = `${getAppUrl()}/api/auth/facebook/callback`;
+  const state = Buffer.from(JSON.stringify({ userId: req.query.userId || 'default' })).toString('base64');
 
   const scopes = [
     'pages_show_list',
@@ -158,126 +125,162 @@ router.get('/facebook/connect', requireAuth, (req, res) => {
   ].join(',');
 
   const authUrl = `${META_AUTH_URL}?client_id=${appId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scopes}&response_type=code&state=${state}`;
-
   res.json({ redirectUrl: authUrl });
 });
 
-/**
- * GET /api/auth/facebook/callback
- */
 router.get('/facebook/callback', async (req, res) => {
   const { code, state, error: oauthError } = req.query;
-
   if (oauthError || !code || !state) {
-    return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3005'}/settings?error=facebook_denied`);
+    return res.redirect(`${getFrontendUrl()}/dashboard?tab=Settings&error=facebook_denied`);
   }
 
   try {
     const { userId } = JSON.parse(Buffer.from(state, 'base64').toString());
+    const supabase = req.app.locals.supabase;
 
     // Exchange for token
-    const tokenResponse = await fetch(`${META_TOKEN_URL}?` + new URLSearchParams({
+    const tokenRes = await fetch(`${META_TOKEN_URL}?` + new URLSearchParams({
       client_id: process.env.META_APP_ID,
       client_secret: process.env.META_APP_SECRET,
-      redirect_uri: `${process.env.APP_URL || 'http://localhost:3002'}/api/auth/facebook/callback`,
+      redirect_uri: `${getAppUrl()}/api/auth/facebook/callback`,
       code,
     }));
-
-    const tokenData = await tokenResponse.json();
+    const tokenData = await tokenRes.json();
     if (tokenData.error) throw new Error(tokenData.error.message);
 
     // Long-lived token
-    const longLivedResponse = await fetch(`${META_TOKEN_URL}?` + new URLSearchParams({
+    const longRes = await fetch(`${META_TOKEN_URL}?` + new URLSearchParams({
       grant_type: 'fb_exchange_token',
       client_id: process.env.META_APP_ID,
       client_secret: process.env.META_APP_SECRET,
       fb_exchange_token: tokenData.access_token,
     }));
+    const longData = await longRes.json();
+    if (longData.error) throw new Error(longData.error.message);
 
-    const longLivedData = await longLivedResponse.json();
-    if (longLivedData.error) throw new Error(longLivedData.error.message);
+    // Get Page access token
+    const pagesRes = await fetch(`${META_GRAPH_URL}/me/accounts?fields=id,name,access_token&access_token=${longData.access_token}`);
+    const pagesData = await pagesRes.json();
+    const page = pagesData.data?.[0];
 
-    // Get Page access token (long-lived)
-    const pagesResponse = await fetch(
-      `${META_GRAPH_URL}/me/accounts?fields=id,name,access_token&access_token=${longLivedData.access_token}`
-    );
-    const pagesData = await pagesResponse.json();
-    const page = pagesData.data?.[0]; // First page
-
-    // Store
-    const { error: dbError } = await supabase
-      .from('api_keys')
+    // Store in outreach_credentials
+    await supabase
+      .from('outreach_credentials')
       .upsert({
         user_id: userId,
-        provider: 'facebook',
-        encrypted_key: page?.access_token || longLivedData.access_token,
-        metadata: {
-          page_id: page?.id,
-          page_name: page?.name,
-          expires_at: new Date(Date.now() + 5184000000).toISOString(), // ~60 days
-          connected_at: new Date().toISOString(),
-        },
+        fb_page_id: page?.id || '',
+        fb_page_token: page?.access_token || longData.access_token,
         updated_at: new Date().toISOString(),
-      }, { onConflict: 'user_id,provider' });
-
-    if (dbError) throw dbError;
+      }, { onConflict: 'user_id' });
 
     console.log(`[OAuth] Facebook connected for user ${userId} (Page: ${page?.name})`);
-    res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3005'}/settings?connected=facebook`);
+    res.redirect(`${getFrontendUrl()}/dashboard?tab=Settings&connected=facebook`);
   } catch (error) {
     console.error('[OAuth] Facebook callback error:', error);
-    res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3005'}/settings?error=facebook_failed`);
+    res.redirect(`${getFrontendUrl()}/dashboard?tab=Settings&error=facebook_failed`);
   }
 });
 
 // ═══════════════════════════════════════
-// Connection Management
+// Google OAuth (Gmail SMTP)
 // ═══════════════════════════════════════
 
-/**
- * GET /api/auth/connections
- * List all connected social accounts for the authenticated user
- */
-router.get('/connections', requireAuth, async (req, res) => {
+router.get('/google/connect', (req, res) => {
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  if (!clientId) return res.status(500).json({ error: 'GOOGLE_CLIENT_ID not configured. Set it in backend/.env' });
+
+  const redirectUri = `${getAppUrl()}/api/auth/google/callback`;
+  const state = Buffer.from(JSON.stringify({ userId: req.query.userId || 'default' })).toString('base64');
+
+  const params = new URLSearchParams({
+    client_id: clientId,
+    redirect_uri: redirectUri,
+    response_type: 'code',
+    scope: 'https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/userinfo.email',
+    access_type: 'offline',
+    prompt: 'consent',
+    state,
+  });
+
+  const authUrl = `${GOOGLE_AUTH_URL}?${params.toString()}`;
+  res.json({ redirectUrl: authUrl });
+});
+
+router.get('/google/callback', async (req, res) => {
+  const { code, state, error: oauthError } = req.query;
+  if (oauthError || !code || !state) {
+    return res.redirect(`${getFrontendUrl()}/dashboard?tab=Settings&error=google_denied`);
+  }
+
   try {
+    const { userId } = JSON.parse(Buffer.from(state, 'base64').toString());
+    const supabase = req.app.locals.supabase;
+
+    // Exchange code for tokens
+    const tokenRes = await fetch(GOOGLE_TOKEN_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        code,
+        client_id: process.env.GOOGLE_CLIENT_ID,
+        client_secret: process.env.GOOGLE_CLIENT_SECRET,
+        redirect_uri: `${getAppUrl()}/api/auth/google/callback`,
+        grant_type: 'authorization_code',
+      }),
+    });
+    const tokenData = await tokenRes.json();
+    if (tokenData.error) throw new Error(tokenData.error_description || tokenData.error);
+
+    // Get user email
+    const userRes = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+      headers: { Authorization: `Bearer ${tokenData.access_token}` },
+    });
+    const userData = await userRes.json();
+
+    // Store in outreach_credentials as SMTP (Gmail uses OAuth tokens, but we store it in smtp fields)
+    await supabase
+      .from('outreach_credentials')
+      .upsert({
+        user_id: userId,
+        smtp_host: 'smtp.gmail.com',
+        smtp_port: 587,
+        smtp_user: userData.email || '',
+        smtp_pass: tokenData.refresh_token || tokenData.access_token, // Refresh token for long-term use
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'user_id' });
+
+    console.log(`[OAuth] Google/Gmail connected for user ${userId} (${userData.email})`);
+    res.redirect(`${getFrontendUrl()}/dashboard?tab=Settings&connected=email`);
+  } catch (error) {
+    console.error('[OAuth] Google callback error:', error);
+    res.redirect(`${getFrontendUrl()}/dashboard?tab=Settings&error=google_failed`);
+  }
+});
+
+// ═══════════════════════════════════════
+// Connection Status
+// ═══════════════════════════════════════
+
+router.get('/status', async (req, res) => {
+  try {
+    const supabase = req.app.locals.supabase;
+    const userId = req.query.userId || 'default';
+
     const { data, error } = await supabase
-      .from('api_keys')
-      .select('provider, metadata, updated_at')
-      .eq('user_id', req.user.userId);
+      .from('outreach_credentials')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
 
-    if (error) throw error;
+    if (error && error.code !== 'PGRST116') throw error;
 
-    const connections = (data || []).map(c => ({
-      provider: c.provider,
-      connected: true,
-      pageName: c.metadata?.page_name || null,
-      connectedAt: c.metadata?.connected_at || c.updated_at,
-      expiresAt: c.metadata?.expires_at || null,
-    }));
-
-    res.json({ connections });
+    res.json({
+      instagram: !!data?.ig_access_token,
+      facebook: !!data?.fb_page_token,
+      email: !!data?.smtp_user,
+    });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch connections' });
-  }
-});
-
-/**
- * DELETE /api/auth/disconnect/:provider
- * Remove a social account connection
- */
-router.delete('/disconnect/:provider', requireAuth, async (req, res) => {
-  try {
-    const { error } = await supabase
-      .from('api_keys')
-      .delete()
-      .eq('user_id', req.user.userId)
-      .eq('provider', req.params.provider);
-
-    if (error) throw error;
-
-    res.json({ success: true, message: `${req.params.provider} disconnected` });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to disconnect' });
+    res.status(500).json({ error: 'Failed to get connection status' });
   }
 });
 
