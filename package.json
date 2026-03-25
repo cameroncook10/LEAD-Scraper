@@ -16,6 +16,10 @@
     "start:backend": "cd backend && node server.js",
     "start:frontend": "cd frontend && npm run preview",
     "install:mobile": "cd mobile && npm install",
+    "install:desktop": "cd desktop && npm install && cd renderer && npm install",
+    "dev:desktop": "cd desktop && npm run dev",
+    "build:desktop:win": "cd desktop && npm run build:win",
+    "build:desktop:mac": "cd desktop && npm run build:mac",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
