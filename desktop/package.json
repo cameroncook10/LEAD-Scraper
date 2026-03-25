@@ -10,9 +10,9 @@
     "dev": "concurrently \"npm run dev:renderer\" \"wait-on http://localhost:3005 && electron .\"",
     "dev:renderer": "cd renderer && npx vite --port 3005",
     "build:renderer": "cd renderer && npx vite build",
-    "build:win": "npm run build:renderer && electron-builder --win",
-    "build:mac": "npm run build:renderer && electron-builder --mac",
-    "build:all": "npm run build:renderer && electron-builder --win --mac"
+    "build:win": "npm run build:renderer && electron-builder --win --publish always",
+    "build:mac": "npm run build:renderer && electron-builder --mac --publish always",
+    "build:all": "npm run build:renderer && electron-builder --win --mac --publish always"
   },
   "dependencies": {
     "electron-updater": "^6.3.0",
