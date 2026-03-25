@@ -2,14 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../../frontend/src/lib/supabase';
 import { useAuth } from './ElectronAuthContext';
 
+const FREE_TRIAL_DAYS = 7;
+
 /**
- * SubscriptionGate - Verifies the user has an active Stripe subscription.
- * Shows a paywall if not subscribed. Caches result for 1 hour.
+ * SubscriptionGate - Allows a 7-day free trial (no card required),
+ * then verifies the user has an active Stripe subscription.
  */
 export function SubscriptionGate({ children }) {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
-  const [subStatus, setSubStatus] = useState(null); // null = checking, 'active', 'inactive'
+  const [subStatus, setSubStatus] = useState(null); // null = checking, 'active', 'trial', 'inactive'
   const [checking, setChecking] = useState(false);
+  const [trialDaysLeft, setTrialDaysLeft] = useState(0);
 
   useEffect(() => {
     if (!isAuthenticated || !user?.email) {
@@ -17,7 +20,15 @@ export function SubscriptionGate({ children }) {
       return;
     }
 
-    // Check cache first
+    // Check free trial first
+    const trialStatus = checkFreeTrial(user.email);
+    if (trialStatus.active) {
+      setTrialDaysLeft(trialStatus.daysLeft);
+      setSubStatus('trial');
+      return;
+    }
+
+    // Trial expired — check cache for subscription
     const cached = localStorage.getItem('sub_cache');
     if (cached) {
       try {
@@ -32,6 +43,27 @@ export function SubscriptionGate({ children }) {
     verifySubscription();
   }, [isAuthenticated, user?.email]);
 
+  /**
+   * Check if the user is still within their free trial period.
+   * Starts the trial on first sign-in (no card required).
+   */
+  function checkFreeTrial(email) {
+    const key = `trial_start_${email}`;
+    let trialStart = localStorage.getItem(key);
+
+    if (!trialStart) {
+      // First sign-in — start the free trial now
+      trialStart = Date.now().toString();
+      localStorage.setItem(key, trialStart);
+    }
+
+    const elapsed = Date.now() - Number(trialStart);
+    const trialMs = FREE_TRIAL_DAYS * 24 * 60 * 60 * 1000;
+    const daysLeft = Math.max(0, Math.ceil((trialMs - elapsed) / (24 * 60 * 60 * 1000)));
+
+    return { active: elapsed < trialMs, daysLeft };
+  }
+
   const verifySubscription = async () => {
     setChecking(true);
     try {
@@ -41,15 +73,13 @@ export function SubscriptionGate({ children }) {
 
       if (error) {
         console.error('Subscription check failed:', error);
-        // On error, allow access (fail open for better UX)
-        setSubStatus('active');
+        setSubStatus('active'); // Fail open
         return;
       }
 
       const active = data?.active === true;
       setSubStatus(active ? 'active' : 'inactive');
 
-      // Cache result
       localStorage.setItem('sub_cache', JSON.stringify({
         email: user.email,
         active,
@@ -90,14 +120,69 @@ export function SubscriptionGate({ children }) {
             animation: 'spin 0.8s linear infinite',
             margin: '0 auto 1rem',
           }} />
-          <p>Verifying subscription...</p>
+          <p>Loading...</p>
           <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
         </div>
       </div>
     );
   }
 
-  // No active subscription — show paywall
+  // Free trial active
+  if (subStatus === 'trial') {
+    return (
+      <>
+        {/* Trial banner */}
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 9999,
+          background: 'linear-gradient(135deg, rgba(6,182,212,0.15), rgba(59,130,246,0.15))',
+          borderBottom: '1px solid rgba(6,182,212,0.2)',
+          padding: '8px 16px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 12,
+          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+          backdropFilter: 'blur(12px)',
+        }}>
+          <span style={{ color: '#22d3ee', fontSize: '0.85rem', fontWeight: 600 }}>
+            Free Trial — {trialDaysLeft} day{trialDaysLeft !== 1 ? 's' : ''} remaining
+          </span>
+          <button
+            onClick={() => {
+              const url = 'https://agentlead.io/#pricing';
+              if (window.electronAPI?.openExternal) {
+                window.electronAPI.openExternal(url);
+              } else {
+                window.open(url, '_blank');
+              }
+            }}
+            style={{
+              background: 'linear-gradient(135deg, #06b6d4, #3b82f6)',
+              color: '#fff',
+              border: 'none',
+              padding: '4px 14px',
+              borderRadius: 6,
+              fontSize: '0.8rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+          >
+            Upgrade
+          </button>
+        </div>
+        {/* Push content down to make room for the banner */}
+        <div style={{ paddingTop: 40 }}>
+          {children}
+        </div>
+      </>
+    );
+  }
+
+  // No active subscription and trial expired — show paywall
   if (subStatus === 'inactive') {
     return (
       <div style={{
@@ -118,11 +203,11 @@ export function SubscriptionGate({ children }) {
           background: 'rgba(255,255,255,0.03)',
         }}>
           <h2 style={{ fontSize: '1.5rem', marginBottom: '0.75rem', fontWeight: 700 }}>
-            Subscription Required
+            Free Trial Ended
           </h2>
           <p style={{ color: '#9ca3af', marginBottom: '1.5rem', lineHeight: 1.6 }}>
-            Your trial has ended or you don't have an active subscription.
-            Subscribe to continue using AgentLead.
+            Your {FREE_TRIAL_DAYS}-day free trial has ended.
+            Subscribe to continue using AgentLead — no data is lost.
           </p>
           <button
             onClick={() => {

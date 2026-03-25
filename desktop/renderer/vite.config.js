@@ -1,50 +1,56 @@
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-export default defineConfig({
-  plugins: [react()],
-  root: __dirname,
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, '../../frontend/src'),
+export default defineConfig(({ mode }) => {
+  // Load env vars from desktop/.env (one level up from renderer)
+  const env = loadEnv(mode, path.resolve(__dirname, '..'), '');
+
+  return {
+    plugins: [react()],
+    root: __dirname,
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, '../../frontend/src'),
+        // Redirect frontend AuthContext → Electron AuthContext so that
+        // shared pages like LoginPage use the Electron auth provider
+        [path.resolve(__dirname, '../../frontend/src/contexts/AuthContext')]:
+          path.resolve(__dirname, 'contexts/ElectronAuthContext.jsx'),
+      },
+      dedupe: [
+        'react', 'react-dom', 'react-router-dom',
+        'framer-motion', 'lucide-react', '@supabase/supabase-js',
+        'axios', 'date-fns', 'clsx', 'tailwind-merge',
+      ],
     },
-    // Force Vite to resolve all packages from the renderer's node_modules
-    // (since imported frontend/src files don't have their own node_modules)
-    dedupe: [
-      'react', 'react-dom', 'react-router-dom',
-      'framer-motion', 'lucide-react', '@supabase/supabase-js',
-      'axios', 'date-fns', 'clsx', 'tailwind-merge',
-    ],
-  },
-  server: {
-    port: 3005,
-    fs: {
-      // Allow serving files from the frontend source directory
-      allow: [__dirname, path.resolve(__dirname, '../../frontend/src')],
+    server: {
+      port: 3005,
+      fs: {
+        allow: [__dirname, path.resolve(__dirname, '../../frontend/src')],
+      },
     },
-  },
-  build: {
-    outDir: 'dist',
-    emptyOutDir: true,
-    rollupOptions: {
-      // Ensure Rollup resolves modules from the renderer's node_modules
-      // when processing files outside the renderer root
+    build: {
+      outDir: 'dist',
+      emptyOutDir: true,
     },
-  },
-  define: {
-    'import.meta.env.VITE_API_URL': JSON.stringify('http://localhost:3099/api'),
-  },
-  // Resolve modules from the renderer's own node_modules even for
-  // source files imported from ../../frontend/src/
-  optimizeDeps: {
-    include: [
-      'react', 'react-dom', 'react-router-dom',
-      'framer-motion', 'lucide-react', '@supabase/supabase-js',
-      'axios', 'date-fns', 'clsx', 'tailwind-merge',
-    ],
-  },
+    define: {
+      'import.meta.env.VITE_API_URL': JSON.stringify('http://localhost:3099/api'),
+      'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(
+        env.SUPABASE_URL || env.VITE_SUPABASE_URL || ''
+      ),
+      'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(
+        env.SUPABASE_ANON_KEY || env.VITE_SUPABASE_ANON_KEY || ''
+      ),
+    },
+    optimizeDeps: {
+      include: [
+        'react', 'react-dom', 'react-router-dom',
+        'framer-motion', 'lucide-react', '@supabase/supabase-js',
+        'axios', 'date-fns', 'clsx', 'tailwind-merge',
+      ],
+    },
+  };
 });
