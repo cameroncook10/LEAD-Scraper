@@ -1,6 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Download } from "lucide-react";
 
 export function CTASection() {
   return (
@@ -47,6 +47,16 @@ export function CTASection() {
                 Get Started Now
                 <ArrowRight className="w-4 h-4 ml-2" />
               </motion.button>
+
+              <motion.a
+                href="/download"
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                className="flex items-center gap-2 px-10 py-4 text-base rounded-xl font-semibold bg-white/5 border border-white/10 text-gray-300 hover:bg-white/10 transition-colors"
+              >
+                <Download className="w-4 h-4" />
+                Download Desktop App
+              </motion.a>
             </div>
 
             <p className="mt-6 text-xs text-gray-600">

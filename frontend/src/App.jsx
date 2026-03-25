@@ -51,7 +51,7 @@ function App() {
   );
 }
 
-const NAV_ITEMS = ["Features", "Industries", "How It Works", "Pricing", "FAQ"];
+const NAV_ITEMS = ["Features", "Industries", "How It Works", "Pricing", "FAQ", "Download"];
 
 function GlassNavigation({ mobileMenuOpen, setMobileMenuOpen }) {
   const [hidden, setHidden] = useState(false);
@@ -109,7 +109,7 @@ function GlassNavigation({ mobileMenuOpen, setMobileMenuOpen }) {
               {NAV_ITEMS.map((item) => (
                 <a
                   key={item}
-                  href={`#${item.toLowerCase().replace(/\s+/g, "-")}`}
+                  href={item === "Download" ? "/download" : `#${item.toLowerCase().replace(/\s+/g, "-")}`}
                   className="text-[13px] text-gray-400 hover:text-white transition-colors duration-200 relative group font-medium"
                 >
                   {item}
@@ -149,7 +149,7 @@ function GlassNavigation({ mobileMenuOpen, setMobileMenuOpen }) {
             {NAV_ITEMS.map((item) => (
               <a
                 key={item}
-                href={`#${item.toLowerCase().replace(/\s+/g, "-")}`}
+                href={item === "Download" ? "/download" : `#${item.toLowerCase().replace(/\s+/g, "-")}`}
                 onClick={() => setMobileMenuOpen(false)}
                 className="block text-gray-300 hover:text-white transition-colors py-1.5 text-sm"
               >
