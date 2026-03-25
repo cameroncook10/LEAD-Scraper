@@ -42,7 +42,7 @@ function LeadRow({ name, location, score, status }: { name: string; location: st
 
 export function DashboardSection() {
   return (
-    <section className="py-24 px-6 relative overflow-hidden">
+    <section id="dashboard" className="py-24 px-6 relative overflow-hidden">
       <div className="max-w-6xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}

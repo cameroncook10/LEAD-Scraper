@@ -1,13 +1,43 @@
 'use client';
 
+import { useState } from "react";
 import { LeadScrapingVisual } from "@/components/ui/lead-scraping-visual";
 import { Spotlight } from "@/components/ui/spotlight";
 import { motion } from "framer-motion";
-import { ArrowRight, Play } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { ArrowRight, Play, Loader2 } from "lucide-react";
 
 export function SplineHeroSection() {
-  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+
+  const handleStartTrial = async () => {
+    setLoading(true);
+    try {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+      const res = await fetch(`${supabaseUrl}/functions/v1/stripe-checkout`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${supabaseKey}`,
+        },
+        body: JSON.stringify({ plan: 'starter' }),
+      });
+
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error(data.error || 'No checkout URL returned');
+      }
+    } catch (err: any) {
+      console.error("Checkout error:", err);
+      alert(err.message || "Unable to start checkout. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <section className="relative min-h-screen flex items-center overflow-hidden pt-24 pb-16">
       {/* Top gradient wash */}
@@ -16,19 +46,19 @@ export function SplineHeroSection() {
       }} />
 
       <Spotlight className="-top-40 left-0 md:left-40 md:-top-20" size={800} />
-      
+
       <div className="max-w-7xl mx-auto px-6 w-full relative z-10">
         <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-0">
-          
+
           {/* Left — 55% text column */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1, ease: [0.25, 0.46, 0.45, 0.94] }}
             className="flex-1 lg:max-w-[55%] relative z-20"
           >
             {/* Badge */}
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.3 }}
@@ -54,23 +84,33 @@ export function SplineHeroSection() {
 
             {/* Subhead */}
             <p className="text-lg md:text-xl text-gray-400 max-w-xl mb-10 leading-relaxed font-light">
-              Our AI maps business networks in real-time, identifies qualified leads, and deploys personalized outreach at scale. 
+              Our AI maps business networks in real-time, identifies qualified leads, and deploys personalized outreach at scale.
               <span className="text-cyan-400/80"> Zero manual work.</span>
             </p>
 
             {/* CTAs — Dual */}
             <div className="flex flex-wrap gap-4 mb-12">
               <motion.button
-                onClick={() => navigate('/dashboard?tab=Campaigns')}
+                onClick={handleStartTrial}
+                disabled={loading}
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
-                className="btn-primary px-8 py-4 text-base rounded-xl"
+                className={`btn-primary px-8 py-4 text-base rounded-xl ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
               >
-                Start 3-Day Trial
-                <ArrowRight className="w-4 h-4 ml-2" />
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Redirecting...
+                  </>
+                ) : (
+                  <>
+                    Start 3-Day Trial
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </>
+                )}
               </motion.button>
               <motion.button
-                onClick={() => navigate('/dashboard')}
+                onClick={() => document.getElementById('dashboard')?.scrollIntoView({ behavior: 'smooth' })}
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
                 className="btn-ghost px-8 py-4 text-base rounded-xl"

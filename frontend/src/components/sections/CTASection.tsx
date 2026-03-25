@@ -1,10 +1,8 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 
 export function CTASection() {
-  const navigate = useNavigate();
   return (
     <section className="py-28 px-6 relative overflow-hidden">
       <div className="max-w-4xl mx-auto relative">
@@ -28,7 +26,7 @@ export function CTASection() {
               background: 'radial-gradient(ellipse at 30% 20%, rgba(6,182,212,0.06) 0%, transparent 50%), radial-gradient(ellipse at 70% 80%, rgba(139,92,246,0.04) 0%, transparent 50%)',
             }}
           />
-          
+
           <div className="relative z-10">
             <h2 className="text-display text-4xl md:text-5xl lg:text-6xl mb-6">
               <span className="gradient-text-subtle">Ready to Scale </span>
@@ -41,7 +39,7 @@ export function CTASection() {
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <motion.button
-                onClick={() => navigate('/dashboard')}
+                onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
                 className="btn-primary px-10 py-4 text-base rounded-xl"

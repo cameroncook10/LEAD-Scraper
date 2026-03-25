@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, useScroll, useMotionValueEvent, useTransform } from 'framer-motion';
 import { Menu, X, ArrowRight } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import CursorFollower from './components/ui/cursor-follower';
 import { GlobalBackground } from './components/ui/GlobalBackground';
 import { SplineHeroSection } from './components/sections/SplineHeroSection';
@@ -55,7 +54,6 @@ function App() {
 const NAV_ITEMS = ["Features", "Industries", "How It Works", "Pricing", "FAQ"];
 
 function GlassNavigation({ mobileMenuOpen, setMobileMenuOpen }) {
-  const navigate = useNavigate();
   const [hidden, setHidden] = useState(false);
   const { scrollY } = useScroll();
   const lastScrollY = useRef(0);
@@ -122,7 +120,7 @@ function GlassNavigation({ mobileMenuOpen, setMobileMenuOpen }) {
 
             {/* CTA */}
             <motion.button
-              onClick={() => navigate('/dashboard')}
+              onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
               className="hidden md:flex items-center gap-2 bg-white text-gray-950 px-5 py-2 rounded-lg text-sm font-semibold hover:bg-gray-100 transition-colors"
@@ -158,7 +156,7 @@ function GlassNavigation({ mobileMenuOpen, setMobileMenuOpen }) {
                 {item}
               </a>
             ))}
-            <button onClick={() => navigate('/dashboard')} className="w-full bg-white text-gray-950 px-5 py-2.5 rounded-lg font-semibold text-sm">
+            <button onClick={() => { setMobileMenuOpen(false); document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' }); }} className="w-full bg-white text-gray-950 px-5 py-2.5 rounded-lg font-semibold text-sm">
               Get Started
             </button>
           </motion.div>
