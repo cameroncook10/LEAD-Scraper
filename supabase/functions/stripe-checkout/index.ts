@@ -82,7 +82,7 @@ async function handleCheckout(stripeKey: string, body: Record<string, unknown>) 
   // Build form params
   const params = new URLSearchParams({
     'mode': 'subscription',
-    'success_url': (successUrl as string) || `${frontendUrl}/dashboard?tab=Overview&payment=success&session_id={CHECKOUT_SESSION_ID}`,
+    'success_url': (successUrl as string) || `${frontendUrl}/checkout-success?session_id={CHECKOUT_SESSION_ID}`,
     'cancel_url': (cancelUrl as string) || `${frontendUrl}/#pricing`,
     'line_items[0][price_data][currency]': 'usd',
     'line_items[0][price_data][recurring][interval]': isAnnual ? 'year' : 'month',

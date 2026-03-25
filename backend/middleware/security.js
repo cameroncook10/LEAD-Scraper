@@ -6,18 +6,28 @@
  * Set security headers (similar to helmet)
  */
 export const securityHeaders = (req, res, next) => {
-  // Prevent clickjacking
-  res.setHeader('X-Frame-Options', 'DENY');
+  const isElectron = process.env.ELECTRON === '1';
+
+  // Prevent clickjacking (skip in Electron — app runs in BrowserWindow)
+  if (!isElectron) {
+    res.setHeader('X-Frame-Options', 'DENY');
+  }
   // Prevent MIME type sniffing
   res.setHeader('X-Content-Type-Options', 'nosniff');
   // XSS protection
   res.setHeader('X-XSS-Protection', '1; mode=block');
-  // Strict transport security (HTTPS)
-  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  // Strict transport security (skip in Electron — runs on localhost)
+  if (!isElectron) {
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  }
   // Referrer policy
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-  // Content Security Policy
-  res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'");
+  // Content Security Policy (relaxed in Electron to allow file:// and localhost)
+  if (isElectron) {
+    res.setHeader('Content-Security-Policy', "default-src 'self' http://localhost:* file:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'");
+  } else {
+    res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'");
+  }
   // Permissions policy
   res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
   // Remove powered-by header
@@ -31,6 +41,7 @@ export const securityHeaders = (req, res, next) => {
  */
 export const enforceHttps = (req, res, next) => {
   if (process.env.NODE_ENV === 'production' &&
+      process.env.ELECTRON !== '1' &&
       req.headers['x-forwarded-proto'] !== 'https' &&
       !req.headers.host?.includes('localhost')) {
     return res.redirect(301, `https://${req.headers.host}${req.url}`);

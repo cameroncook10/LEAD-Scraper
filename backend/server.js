@@ -37,8 +37,11 @@ app.use(securityHeaders);
 app.use(enforceHttps);
 
 // CORS configuration
+const isElectron = process.env.ELECTRON === '1';
 app.use(cors({
-  origin: process.env.ALLOWED_ORIGINS?.split(',') || '*',
+  origin: isElectron
+    ? true  // Allow all origins in Electron (same-machine only)
+    : (process.env.ALLOWED_ORIGINS?.split(',') || '*'),
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,

@@ -5,3 +5,9 @@ node_modules
 frontend/dist
 frontend/.env.local
 .vercel
+
+# Desktop (Electron)
+desktop/dist/
+desktop/node_modules/
+desktop/renderer/dist/
+desktop/renderer/node_modules/
