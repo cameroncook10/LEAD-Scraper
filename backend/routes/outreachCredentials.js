@@ -9,8 +9,33 @@
  */
 
 import express from 'express';
+import { encrypt, decrypt } from '../utils/encryption.js';
 
 const router = express.Router();
+
+// Fields that contain secrets and must be encrypted at rest
+const SENSITIVE_FIELDS = ['ig_access_token', 'fb_page_token', 'smtp_pass'];
+
+function encryptSensitiveFields(record) {
+  const encrypted = { ...record };
+  for (const field of SENSITIVE_FIELDS) {
+    if (encrypted[field]) {
+      try { encrypted[field] = encrypt(encrypted[field]); } catch {}
+    }
+  }
+  return encrypted;
+}
+
+function decryptSensitiveFields(record) {
+  if (!record) return record;
+  const decrypted = { ...record };
+  for (const field of SENSITIVE_FIELDS) {
+    if (decrypted[field]) {
+      try { decrypted[field] = decrypt(decrypted[field]); } catch {}
+    }
+  }
+  return decrypted;
+}
 
 /**
  * Save outreach credentials for a user.
@@ -36,9 +61,11 @@ router.post('/', async (req, res) => {
       updated_at: new Date().toISOString(),
     };
 
+    const encryptedRecord = encryptSensitiveFields(record);
+
     const { data, error } = await supabase
       .from('outreach_credentials')
-      .upsert(record, { onConflict: 'user_id' })
+      .upsert(encryptedRecord, { onConflict: 'user_id' })
       .select();
 
     if (error) throw error;
@@ -70,26 +97,29 @@ router.get('/', async (req, res) => {
       return res.json({ connected: { instagram: false, facebook: false, email: false } });
     }
 
+    // Decrypt sensitive fields before masking
+    const decrypted = decryptSensitiveFields(data);
+
     // Return masked values + connection status
     res.json({
       connected: {
-        instagram: !!data.ig_access_token,
-        facebook: !!data.fb_page_token,
-        email: !!data.smtp_user,
+        instagram: !!decrypted.ig_access_token,
+        facebook: !!decrypted.fb_page_token,
+        email: !!decrypted.smtp_user,
       },
       instagram: {
-        businessId: data.ig_business_id || '',
-        accessToken: data.ig_access_token ? '••••' + data.ig_access_token.slice(-8) : '',
+        businessId: decrypted.ig_business_id || '',
+        accessToken: decrypted.ig_access_token ? '••••' + decrypted.ig_access_token.slice(-8) : '',
       },
       facebook: {
-        pageId: data.fb_page_id || '',
-        pageToken: data.fb_page_token ? '••••' + data.fb_page_token.slice(-8) : '',
+        pageId: decrypted.fb_page_id || '',
+        pageToken: decrypted.fb_page_token ? '••••' + decrypted.fb_page_token.slice(-8) : '',
       },
       email: {
-        smtpHost: data.smtp_host || '',
-        smtpPort: data.smtp_port?.toString() || '587',
-        smtpUser: data.smtp_user || '',
-        smtpPass: data.smtp_pass ? '••••••••' : '',
+        smtpHost: decrypted.smtp_host || '',
+        smtpPort: decrypted.smtp_port?.toString() || '587',
+        smtpUser: decrypted.smtp_user || '',
+        smtpPass: decrypted.smtp_pass ? '••••••••' : '',
       },
     });
   } catch (err) {
@@ -110,7 +140,7 @@ export async function getUserCredentials(supabase, userId = 'default') {
     .single();
 
   if (error || !data) return null;
-  return data;
+  return decryptSensitiveFields(data);
 }
 
 export default router;

@@ -30,8 +30,9 @@ router.get('/', async (req, res, next) => {
                 .lte('ai_score', parseInt(maxScore));
 
     if (search) {
-      // Search in name, email, phone
-      query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%,phone.ilike.%${search}%`);
+      // Sanitize search to prevent ilike injection
+      const sanitized = search.replace(/%/g, '\\%').replace(/_/g, '\\_');
+      query = query.or(`name.ilike.%${sanitized}%,email.ilike.%${sanitized}%,phone.ilike.%${sanitized}%`);
     }
 
     // Apply pagination

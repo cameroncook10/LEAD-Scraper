@@ -1,10 +1,10 @@
-const { contextBridge, ipcRenderer, shell } = require('electron');
+const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('electronAPI', {
   // Auth
   onAuthCallback: (callback) =>
     ipcRenderer.on('auth-callback', (_event, url) => callback(url)),
-  openExternal: (url) => shell.openExternal(url),
+  openExternal: (url) => ipcRenderer.invoke('open-external', url),
 
   // App info
   getVersion: () => ipcRenderer.invoke('get-version'),

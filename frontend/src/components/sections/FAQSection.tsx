@@ -24,8 +24,8 @@ const faqs = [
     a: "Our AI scores leads with 94% accuracy based on engagement signals, business size, online activity, and custom criteria you define. Hot leads are prioritized automatically in your dashboard.",
   },
   {
-    q: "Do you offer a free trial?",
-    a: "Yes! Every plan includes a 3-day free trial. You enter your card upfront but won't be charged until the trial ends. We send a cancellation reminder before your first payment.",
+    q: "Can I try Agent Lead before committing?",
+    a: "We offer free trials on a case-by-case basis. Email us to request a free trial and we'll get you set up.",
   },
   {
     q: "What kind of support do you offer?",

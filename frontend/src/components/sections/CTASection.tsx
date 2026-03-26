@@ -60,7 +60,7 @@ export function CTASection() {
             </div>
 
             <p className="mt-6 text-xs text-gray-600">
-              3-day free trial on all plans • Cancel anytime
+              Cancel anytime • Instant access after purchase
             </p>
           </div>
         </motion.div>

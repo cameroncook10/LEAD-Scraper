@@ -32,6 +32,7 @@ export default defineConfig(({ mode }) => {
         allow: [__dirname, path.resolve(__dirname, '../../frontend/src')],
       },
     },
+    base: './',
     build: {
       outDir: 'dist',
       emptyOutDir: true,

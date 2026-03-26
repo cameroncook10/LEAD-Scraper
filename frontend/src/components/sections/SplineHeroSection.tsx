@@ -9,12 +9,17 @@ import { ArrowRight, Play, Loader2 } from "lucide-react";
 export function SplineHeroSection() {
   const [loading, setLoading] = useState(false);
 
-  const handleStartTrial = async () => {
+  const handleGetStarted = async () => {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+    if (!supabaseUrl || !supabaseKey) {
+      alert("Payment system is not configured yet. Please contact support@agentlead.io.");
+      return;
+    }
+
     setLoading(true);
     try {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
       const res = await fetch(`${supabaseUrl}/functions/v1/stripe-checkout`, {
         method: 'POST',
         headers: {
@@ -23,6 +28,11 @@ export function SplineHeroSection() {
         },
         body: JSON.stringify({ plan: 'starter' }),
       });
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`Checkout failed (${res.status}): ${text}`);
+      }
 
       const data = await res.json();
       if (data.url) {
@@ -91,7 +101,7 @@ export function SplineHeroSection() {
             {/* CTAs — Dual */}
             <div className="flex flex-wrap gap-4 mb-12">
               <motion.button
-                onClick={handleStartTrial}
+                onClick={handleGetStarted}
                 disabled={loading}
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
@@ -104,7 +114,7 @@ export function SplineHeroSection() {
                   </>
                 ) : (
                   <>
-                    Start 3-Day Trial
+                    Get Started
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </>
                 )}

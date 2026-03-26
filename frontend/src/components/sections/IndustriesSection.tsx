@@ -157,6 +157,7 @@ export function IndustriesSection() {
                 transition={{ delay: i * 0.06, duration: 0.5 }}
                 whileHover={{ y: -6, scale: 1.02 }}
                 className="group relative cursor-pointer"
+                onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
               >
                 {/* Liquid glass card */}
                 <div className="relative h-full rounded-2xl overflow-hidden">
@@ -213,6 +214,7 @@ export function IndustriesSection() {
             Don't see your industry? Agent Lead works for any service-based business.
           </p>
           <motion.button
+            onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-cyan-500/30 text-white font-medium transition-all duration-300"

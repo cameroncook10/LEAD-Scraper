@@ -127,6 +127,8 @@ export async function enqueueDM({ deliveryId, provider, scheduleTime }) {
  * Call this on an interval (e.g., every 30 seconds).
  */
 export async function processQueue() {
+  if (!supabase) return;
+
   try {
     // Get pending messages that are ready to send
     const { data: pending, error } = await supabase

@@ -19,6 +19,8 @@ import settingsRoutes from './routes/settings.js';
 import { initializeDatabase } from './db/schema.js';
 import { startQueueProcessor } from './services/messageQueue.js';
 import { securityHeaders, enforceHttps, sanitizeInput } from './middleware/security.js';
+import { requireAuth } from './middleware/auth.js';
+import { apiLimiter, scrapeLimiter } from './middleware/rateLimiter.js';
 
 // Load .env - must assign to process.env for ES modules
 const envConfig = dotenv.config();
@@ -55,11 +57,14 @@ app.use(express.urlencoded({ limit: '10mb', extended: true }));
 // Sanitize all inputs
 app.use(sanitizeInput);
 
-// Initialize Supabase client
-export const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_ANON_KEY
-);
+// Initialize Supabase client (optional — app works without it for local/desktop use)
+let supabase = null;
+if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
+  supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
+} else {
+  console.warn('WARNING: SUPABASE_URL/SUPABASE_ANON_KEY not set. Supabase features disabled.');
+}
+export { supabase };
 
 // Make supabase available to routes
 app.locals.supabase = supabase;
@@ -74,19 +79,22 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Routes
-app.use('/api/scrape', scrapeRoutes);
-app.use('/api/leads', leadsRoutes);
+// Global rate limiter
+app.use(apiLimiter);
+
+// Routes — protected with auth + rate limiters where appropriate
+app.use('/api/scrape', requireAuth, scrapeLimiter, scrapeRoutes);
+app.use('/api/leads', requireAuth, leadsRoutes);
 app.use('/api/jobs', jobsRoutes);
 app.use('/api/industries', industriesRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/webhooks', webhooksRoutes);
-app.use('/api/workflows', workflowRoutes);
+app.use('/api/workflows', requireAuth, workflowRoutes);
 app.use('/api/auth', socialAuthRoutes);
-app.use('/api/outreach', outreachRoutes);
-app.use('/api/outreach-credentials', outreachCredentialsRoutes);
+app.use('/api/outreach', requireAuth, outreachRoutes);
+app.use('/api/outreach-credentials', requireAuth, outreachCredentialsRoutes);
 app.use('/api/stripe', stripeRoutes);
-app.use('/api/settings', settingsRoutes);
+app.use('/api/settings', requireAuth, settingsRoutes);
 
 // 404 handler
 app.use((req, res) => {

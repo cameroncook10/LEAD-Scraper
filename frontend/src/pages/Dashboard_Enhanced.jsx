@@ -60,7 +60,7 @@ function DashboardEnhanced() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const tabFromUrl = searchParams.get('tab');
-  const validTabs = ['Overview', 'Leads', 'Targeting', 'Campaigns', 'Inbox', 'Analytics', 'Settings'];
+  const validTabs = ['Overview', 'Leads', 'Targeting', 'Campaigns', 'Inbox', 'Analytics'];
   const initialTab = validTabs.includes(tabFromUrl) ? tabFromUrl : 'Overview';
   const [activeTab, setActiveTab] = useState(initialTab);
   const [timeFilter, setTimeFilter] = useState('30D');
@@ -322,7 +322,6 @@ function DashboardEnhanced() {
     { name: 'Campaigns', icon: <Zap className="w-5 h-5" /> },
     { name: 'Inbox', icon: <Inbox className="w-5 h-5" /> },
     { name: 'Analytics', icon: <Activity className="w-5 h-5" /> },
-    { name: 'Settings', icon: <Settings className="w-5 h-5" /> }
   ];
 
   // ── Empty chart data (real data will populate from Supabase) ──
@@ -350,15 +349,15 @@ function DashboardEnhanced() {
             <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center mx-auto mb-6">
               <Zap className="w-8 h-8 text-white" />
             </div>
-            <h2 className="text-2xl font-bold text-white mb-2">Start Your 3-Day Free Trial</h2>
+            <h2 className="text-2xl font-bold text-white mb-2">Subscription Required</h2>
             <p className="text-gray-400 text-sm mb-6 leading-relaxed">
-              Get full access to lead scraping, AI qualification, auto-DMs, and all dashboard features. Your card won't be charged until the trial ends.
+              Get full access to lead scraping, AI qualification, auto-DMs, and all dashboard features. Purchase a plan to get started.
             </p>
             <button
               onClick={() => navigate('/#pricing')}
               className="w-full py-3 rounded-xl font-semibold text-sm bg-gradient-to-r from-cyan-500 to-blue-500 text-white hover:shadow-lg hover:shadow-cyan-500/25 transition-all duration-300 mb-3"
             >
-              View Plans & Start Trial
+              View Plans & Subscribe
             </button>
 
             {/* Promo Code */}
@@ -395,7 +394,7 @@ function DashboardEnhanced() {
             </div>
 
             <button
-              onClick={() => navigate('/')}
+              onClick={() => window.open('https://agentlead.io', '_blank')}
               className="w-full py-3 rounded-xl font-semibold text-sm bg-white/5 hover:bg-white/10 text-gray-400 border border-white/[0.06] transition-all duration-300 mt-3"
             >
               ← Back to Site
@@ -405,7 +404,7 @@ function DashboardEnhanced() {
       )}
       <aside className="hidden md:flex flex-col w-64 glass-liquid border-r border-white/[0.06]">
         {/* Logo */}
-        <div className="p-6 flex items-center gap-3 cursor-pointer" onClick={() => navigate('/')}>
+        <div className="p-6 flex items-center gap-3 cursor-pointer" onClick={() => window.open('https://agentlead.io', '_blank')}>
           <div className="w-9 h-9 rounded-lg overflow-hidden flex items-center justify-center">
             <img src="/logo.png" alt="Agent Lead" className="w-9 h-9 object-contain" />
           </div>
@@ -447,12 +446,9 @@ function DashboardEnhanced() {
             <span className="gradient-text-subtle">{activeTab}</span>
           </h1>
           <div className="flex items-center gap-4">
-            <button onClick={() => navigate('/')} className="btn-ghost px-4 py-2 text-sm rounded-lg">
+            <button onClick={() => window.open('https://agentlead.io', '_blank')} className="btn-ghost px-4 py-2 text-sm rounded-lg">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Site
-            </button>
-            <button className="relative w-10 h-10 rounded-full glass-liquid flex items-center justify-center transition hover:shadow-lg hover:shadow-cyan-500/10">
-              <Bell className="w-5 h-5 text-gray-400" />
             </button>
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center font-bold text-sm shadow-lg shadow-cyan-500/20">
               CC

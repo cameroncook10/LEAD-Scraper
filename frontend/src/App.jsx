@@ -91,7 +91,7 @@ function GlassNavigation({ mobileMenuOpen, setMobileMenuOpen }) {
 
           <div className="flex items-center justify-between relative z-10">
             {/* Logo */}
-            <a href="#" className="flex items-center gap-2.5">
+            <a href="/" className="flex items-center gap-2.5">
               <motion.div
                 className="w-9 h-9 rounded-lg overflow-hidden flex items-center justify-center"
                 whileHover={{ scale: 1.08 }}

@@ -30,7 +30,7 @@ export default function CheckoutSuccess() {
 
         <h1 className="text-3xl font-bold text-white mb-3">Payment Successful!</h1>
         <p className="text-gray-400 mb-8 leading-relaxed">
-          Your 3-day free trial has started. Download AgentLead to get started
+          Your subscription is active. Download AgentLead to get started
           with AI-powered lead generation.
         </p>
 

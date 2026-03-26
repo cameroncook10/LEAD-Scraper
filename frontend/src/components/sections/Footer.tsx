@@ -27,7 +27,6 @@ export function Footer() {
               <li><a href="#pricing" className="hover:text-cyan-400 transition-colors">Pricing</a></li>
               <li><a href="#how-it-works" className="hover:text-cyan-400 transition-colors">How It Works</a></li>
               <li><a href="/download" className="hover:text-cyan-400 transition-colors">Desktop App</a></li>
-              <li><a href="#" className="hover:text-cyan-400 transition-colors">API Docs</a></li>
             </ul>
           </div>
 
@@ -35,9 +34,8 @@ export function Footer() {
           <div>
             <h4 className="font-semibold text-white mb-4">Legal</h4>
             <ul className="space-y-3 text-gray-500 text-sm">
-              <li><a href="/legal/terms" className="hover:text-cyan-400 transition-colors">Terms of Service</a></li>
-              <li><a href="/legal/privacy" className="hover:text-cyan-400 transition-colors">Privacy Policy</a></li>
-              <li><a href="/legal/dpa" className="hover:text-cyan-400 transition-colors">Data Processing</a></li>
+              <li><a href="mailto:support@agentlead.io?subject=Terms%20of%20Service" className="hover:text-cyan-400 transition-colors">Terms of Service</a></li>
+              <li><a href="mailto:support@agentlead.io?subject=Privacy%20Policy" className="hover:text-cyan-400 transition-colors">Privacy Policy</a></li>
             </ul>
           </div>
 
@@ -46,9 +44,6 @@ export function Footer() {
             <h4 className="font-semibold text-white mb-4">Contact</h4>
             <ul className="space-y-3 text-gray-500 text-sm">
               <li><a href="mailto:support@agentlead.io" className="hover:text-cyan-400 transition-colors">support@agentlead.io</a></li>
-              <li><a href="#" className="hover:text-cyan-400 transition-colors">Twitter / X</a></li>
-              <li><a href="#" className="hover:text-cyan-400 transition-colors">LinkedIn</a></li>
-              <li><a href="#" className="hover:text-cyan-400 transition-colors">Discord</a></li>
             </ul>
           </div>
         </div>

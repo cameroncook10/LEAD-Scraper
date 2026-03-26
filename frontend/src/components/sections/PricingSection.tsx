@@ -12,7 +12,7 @@ const plans = [
     period: "/month",
     description: "For solo contractors & small businesses getting started with automation.",
     featured: false,
-    cta: "Start 3-Day Trial",
+    cta: "Buy Now",
     mesh: "mesh-blue",
     features: [
       "5,000 leads per month",
@@ -32,7 +32,7 @@ const plans = [
     period: "/month",
     description: "For growing businesses ready to scale outreach and dominate their market.",
     featured: true,
-    cta: "Start 3-Day Trial",
+    cta: "Buy Now",
     badge: "Most Popular",
     mesh: "mesh-cyan",
     features: [
@@ -80,11 +80,16 @@ export function PricingSection() {
       return;
     }
 
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+    if (!supabaseUrl || !supabaseKey) {
+      alert("Payment system is not configured yet. Please contact support@agentlead.io.");
+      return;
+    }
+
     setLoadingPlan(plan.key);
     try {
-      // Call Supabase edge function directly (bypasses backend proxy)
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
       const planKey = isAnnual ? `${plan.key}_annual` : plan.key;
 
       const res = await fetch(`${supabaseUrl}/functions/v1/stripe-checkout`, {
@@ -95,6 +100,11 @@ export function PricingSection() {
         },
         body: JSON.stringify({ plan: planKey }),
       });
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`Checkout failed (${res.status}): ${text}`);
+      }
 
       const data = await res.json();
 
@@ -128,7 +138,7 @@ export function PricingSection() {
             <span className="gradient-text-cyan">Pricing</span>
           </h2>
           <p className="text-gray-500 text-lg max-w-2xl mx-auto font-light">
-            3-day free trial on all plans. Cancel anytime before your trial ends.
+            Choose the plan that fits your business. Cancel anytime.
           </p>
         </motion.div>
 
@@ -211,7 +221,7 @@ export function PricingSection() {
 
               {plan.key !== "enterprise" && (
                 <p className="text-center text-xs text-gray-600 -mt-4 mb-5">
-                  3-day free trial • Cancel anytime • Cancellation reminder sent
+                  Cancel anytime • Instant access after purchase
                 </p>
               )}
 

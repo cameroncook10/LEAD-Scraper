@@ -69,7 +69,7 @@ export function LoginPage() {
 
           <div className="mt-6 text-center">
             <p className="text-xs text-gray-600">
-              By signing in, you agree to our Terms of Service and Privacy Policy
+              By signing in, you agree to our <a href="mailto:support@agentlead.io?subject=Terms%20of%20Service" className="text-cyan-500 hover:underline">Terms of Service</a> and <a href="mailto:support@agentlead.io?subject=Privacy%20Policy" className="text-cyan-500 hover:underline">Privacy Policy</a>
             </p>
           </div>
         </div>

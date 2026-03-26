@@ -14,7 +14,7 @@ const integrations = [
 
 export function IntegrationsSection() {
   return (
-    <section className="py-16 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+    <section id="integrations" className="py-16 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
       {/* Subtle glow */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[200px] bg-cyan-500/5 rounded-full blur-[100px] pointer-events-none" />
 
@@ -47,7 +47,7 @@ export function IntegrationsSection() {
               whileHover={{ y: -4, scale: 1.08 }}
               className="group"
             >
-              <div className="relative backdrop-blur-xl bg-white/[0.04] border border-white/[0.08] rounded-2xl px-6 py-4 hover:border-cyan-500/25 hover:bg-white/[0.07] transition-all duration-500 shadow-lg shadow-black/10 cursor-pointer">
+              <div className="relative backdrop-blur-xl bg-white/[0.04] border border-white/[0.08] rounded-2xl px-6 py-4 hover:border-cyan-500/25 hover:bg-white/[0.07] transition-all duration-500 shadow-lg shadow-black/10">
                 {/* Color dot */}
                 <div className="flex items-center gap-3">
                   <div

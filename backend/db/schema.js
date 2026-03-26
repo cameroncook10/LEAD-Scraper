@@ -1,6 +1,11 @@
 import { supabase } from '../server.js';
 
 export const initializeDatabase = async () => {
+  if (!supabase) {
+    console.warn('Supabase not configured — skipping database check.');
+    return;
+  }
+
   try {
     // Check if tables exist by querying them
     const { data, error } = await supabase

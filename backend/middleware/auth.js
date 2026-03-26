@@ -10,6 +10,9 @@ import { supabase } from '../server.js';
  * Require authentication via Supabase JWT
  */
 export const requireAuth = async (req, res, next) => {
+  // Skip auth when Supabase is not configured (local/Electron dev mode)
+  if (!supabase) return next();
+
   const authHeader = req.headers.authorization;
   const token = authHeader?.split(' ')[1];
 

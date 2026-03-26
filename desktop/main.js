@@ -1,11 +1,25 @@
-const { app, BrowserWindow, protocol, shell, ipcMain } = require('electron');
+const { app, BrowserWindow, protocol, shell, ipcMain, session } = require('electron');
 const { autoUpdater } = require('electron-updater');
 const path = require('path');
 const { fork } = require('child_process');
+const crypto = require('crypto');
 const Store = require('electron-store');
 
-const store = new Store();
 const isDev = !app.isPackaged;
+
+// Lazy-init store with encryption (app.getPath not available until ready)
+let _store;
+function getStore() {
+  if (!_store) {
+    const encryptionKey = crypto
+      .createHash('sha256')
+      .update(`agentlead-${app.getPath('userData')}`)
+      .digest('hex')
+      .slice(0, 32);
+    _store = new Store({ encryptionKey });
+  }
+  return _store;
+}
 
 let mainWindow;
 let backendProcess;
@@ -60,14 +74,19 @@ function startBackend() {
     ? path.join(__dirname, '..', 'backend', 'server.js')
     : path.join(process.resourcesPath, 'backend', 'server.js');
 
+  const backendDir = isDev
+    ? path.join(__dirname, '..', 'backend')
+    : path.join(process.resourcesPath, 'backend');
+
   backendProcess = fork(backendPath, [], {
+    cwd: backendDir,
     env: {
       ...process.env,
       PORT: String(BACKEND_PORT),
       NODE_ENV: isDev ? 'development' : 'production',
       ELECTRON: '1',
-      SUPABASE_URL: store.get('supabaseUrl') || process.env.SUPABASE_URL || '',
-      SUPABASE_ANON_KEY: store.get('supabaseAnonKey') || process.env.SUPABASE_ANON_KEY || '',
+      SUPABASE_URL: getStore().get('supabaseUrl') || process.env.SUPABASE_URL || '',
+      SUPABASE_ANON_KEY: getStore().get('supabaseAnonKey') || process.env.SUPABASE_ANON_KEY || '',
     },
     stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
   });
@@ -117,6 +136,8 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
       contextIsolation: true,
+      webSecurity: true,
+      allowRunningInsecureContent: false,
     },
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
     backgroundColor: '#050505',
@@ -126,6 +147,31 @@ function createWindow() {
   // Show splash while loading
   mainWindow.loadFile(path.join(__dirname, 'splash.html'));
   mainWindow.once('ready-to-show', () => mainWindow.show());
+
+  // Navigation guards — prevent renderer from navigating to untrusted URLs
+  mainWindow.webContents.on('will-navigate', (event, url) => {
+    try {
+      const parsed = new URL(url);
+      if (isDev && parsed.hostname === 'localhost') return;
+      if (parsed.protocol === 'file:') return;
+      event.preventDefault();
+      if (['https:', 'http:', 'mailto:'].includes(parsed.protocol)) {
+        shell.openExternal(url);
+      }
+    } catch {
+      event.preventDefault();
+    }
+  });
+
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    try {
+      const parsed = new URL(url);
+      if (['https:', 'http:', 'mailto:'].includes(parsed.protocol)) {
+        shell.openExternal(url);
+      }
+    } catch {}
+    return { action: 'deny' };
+  });
 
   return mainWindow;
 }
@@ -145,7 +191,12 @@ ipcMain.handle('check-updates', () => {
   autoUpdater.checkForUpdatesAndNotify();
 });
 ipcMain.handle('open-external', (_event, url) => {
-  shell.openExternal(url);
+  try {
+    const parsed = new URL(url);
+    if (['https:', 'http:', 'mailto:'].includes(parsed.protocol)) {
+      shell.openExternal(url);
+    }
+  } catch {}
 });
 
 // ── Auto-update events ──

@@ -4,7 +4,6 @@ import {
   DatabaseZap,
   LayoutDashboard,
   Mail,
-  Settings,
   Users,
 } from 'lucide-react';
 
@@ -39,11 +38,6 @@ const data = [
   {
     title: 'Analytics',
     icon: <BarChart3 className='h-full w-full' />,
-    section: 'pricing',
-  },
-  {
-    title: 'Settings',
-    icon: <Settings className='h-full w-full' />,
     section: 'pricing',
   },
 ];
