@@ -5,6 +5,8 @@
  * Handles rate limiting, retries, and delivery status tracking.
  */
 import { supabase } from '../server.js';
+import { emailService, renderTemplate } from './emailService.js';
+import { smsService } from './smsService.js';
 
 // Rate limits per provider (messages per hour)
 const RATE_LIMITS = {
@@ -165,27 +167,93 @@ export async function processQueue() {
       }
 
       try {
-        // Import the appropriate provider dynamically
         let sendResult;
-        
+        const delivery = item.campaign_deliveries;
+        const lead = delivery?.leads;
+        const campaign = delivery?.email_campaigns;
+        const userId = campaign?.user_id;
+
         switch (provider) {
-          case 'instagram':
+          case 'instagram': {
             const { sendInstagramDM } = await import('./dmProviders/instagram.js');
-            sendResult = await sendInstagramDM(item.campaign_deliveries);
+            sendResult = await sendInstagramDM(delivery, userId);
             break;
-          case 'facebook':
+          }
+          case 'facebook': {
             const { sendFacebookMessage } = await import('./dmProviders/facebook.js');
-            sendResult = await sendFacebookMessage(item.campaign_deliveries);
+            sendResult = await sendFacebookMessage(delivery, userId);
             break;
-          case 'email':
-            // Future: integrate with email provider (SendGrid, Resend, etc.)
-            sendResult = { success: true, messageId: `email-${Date.now()}` };
+          }
+          case 'email': {
+            if (!lead?.email) {
+              sendResult = { success: false, error: 'Lead has no email address' };
+              break;
+            }
+            try {
+              // Get template body or use personalized message
+              let htmlBody = delivery?.metadata?.personalizedMessage || campaign?.body || '';
+              htmlBody = renderTemplate(htmlBody, {
+                name: lead.name || 'there',
+                business: lead.name || 'your business',
+                industry: lead.business_type || 'your industry',
+                location: lead.address || 'your area',
+              });
+              const result = await emailService.sendEmail({
+                to: lead.email,
+                subject: campaign?.subject || campaign?.name || 'Hello',
+                html: htmlBody,
+                text: htmlBody.replace(/<[^>]*>/g, ''),
+              });
+              sendResult = { success: true, messageId: result.messageId };
+            } catch (emailErr) {
+              sendResult = { success: false, error: emailErr.message };
+            }
             break;
-          case 'sms':
-          case 'whatsapp':
-            // Future: integrate with Twilio
-            sendResult = { success: true, messageId: `${provider}-${Date.now()}` };
+          }
+          case 'sms': {
+            if (!lead?.phone) {
+              sendResult = { success: false, error: 'Lead has no phone number' };
+              break;
+            }
+            try {
+              let body = delivery?.metadata?.personalizedMessage || campaign?.body || '';
+              body = renderTemplate(body, {
+                name: lead.name || 'there',
+                business: lead.name || 'your business',
+              });
+              const result = await smsService.sendSMS({
+                to: lead.phone,
+                body,
+                trackingId: item.delivery_id,
+              });
+              sendResult = { success: true, messageId: result.messageId };
+            } catch (smsErr) {
+              sendResult = { success: false, error: smsErr.message };
+            }
             break;
+          }
+          case 'whatsapp': {
+            if (!lead?.phone) {
+              sendResult = { success: false, error: 'Lead has no phone number' };
+              break;
+            }
+            try {
+              let body = delivery?.metadata?.personalizedMessage || campaign?.body || '';
+              body = renderTemplate(body, {
+                name: lead.name || 'there',
+                business: lead.name || 'your business',
+              });
+              const result = await smsService.sendWhatsApp({
+                to: lead.phone,
+                body,
+                trackingId: item.delivery_id,
+              });
+              sendResult = { success: true, messageId: result.messageId };
+            } catch (waErr) {
+              sendResult = { success: false, error: waErr.message };
+            }
+            break;
+          }
           default:
             sendResult = { success: false, error: `Unknown provider: ${provider}` };
         }
@@ -194,11 +262,12 @@ export async function processQueue() {
           incrementSendCount(provider);
           
           // Update delivery status
+          const messageIdField = provider === 'email' ? 'email_message_id' : 'sms_message_id';
           await supabase
             .from('campaign_deliveries')
-            .update({ 
+            .update({
               status: 'sent',
-              [`${provider === 'email' ? 'email' : 'sms'}_message_id`]: sendResult.messageId,
+              [messageIdField]: sendResult.messageId,
               updated_at: new Date().toISOString()
             })
             .eq('id', item.delivery_id);
