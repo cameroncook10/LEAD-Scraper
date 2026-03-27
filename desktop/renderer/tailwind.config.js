@@ -5,6 +5,8 @@ export default {
   content: [
     "./index.html",
     "./contexts/**/*.{js,jsx}",
+    "./components/**/*.{js,jsx}",
+    "./pages/**/*.{js,jsx}",
     "./*.{js,jsx}",
     "../../frontend/src/**/*.{js,jsx,ts,tsx}",
   ],

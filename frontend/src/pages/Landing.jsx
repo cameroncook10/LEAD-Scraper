@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ArrowRight, Zap, Brain, TrendingUp, Check, Star, Users, Shield, Rocket } from 'lucide-react';
 
-export default function Landing({ onGetStarted }) {
+export default function Landing() {
   const [email, setEmail] = useState('');
   const [emailError, setEmailError] = useState('');
 
@@ -27,7 +27,7 @@ export default function Landing({ onGetStarted }) {
             <div className="flex items-center space-x-2">
               <Zap className="w-8 h-8 text-blue-500" />
               <span className="text-xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
-                Lead Scraper
+                AgentLead
               </span>
             </div>
             <div className="hidden md:flex items-center space-x-8">
@@ -36,7 +36,7 @@ export default function Landing({ onGetStarted }) {
               <a href="#pricing" className="hover:text-blue-400 transition">Pricing</a>
               <a href="#faq" className="hover:text-blue-400 transition">FAQ</a>
               <button
-                onClick={onGetStarted}
+                onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
                 className="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded-lg font-semibold transition"
               >
                 Get Started
@@ -66,13 +66,16 @@ export default function Landing({ onGetStarted }) {
 
               <div className="flex flex-col sm:flex-row gap-4">
                 <button
-                  onClick={onGetStarted}
+                  onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
                   className="group bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg font-bold text-lg flex items-center justify-center space-x-2 transition transform hover:scale-105"
                 >
-                  <span>Start 3-Day Trial</span>
+                  <span>Get Started</span>
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition" />
                 </button>
-                <button className="border-2 border-slate-600 hover:border-blue-400 text-white px-8 py-4 rounded-lg font-bold transition">
+                <button
+                  onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
+                  className="border-2 border-slate-600 hover:border-blue-400 text-white px-8 py-4 rounded-lg font-bold transition"
+                >
                   Watch Demo
                 </button>
               </div>
@@ -80,7 +83,7 @@ export default function Landing({ onGetStarted }) {
               <div className="flex flex-col sm:flex-row gap-6 text-sm text-slate-400">
                 <div className="flex items-center space-x-2">
                   <Check className="w-5 h-5 text-green-500" />
-                  <span>No credit card required</span>
+                  <span>Cancel anytime</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Check className="w-5 h-5 text-green-500" />
@@ -165,7 +168,7 @@ export default function Landing({ onGetStarted }) {
               <ul className="space-y-2 text-sm text-slate-300">
                 <li className="flex items-center space-x-2">
                   <Check className="w-4 h-4 text-green-500" />
-                  <span>94% accuracy</span>
+                  <span>AI-powered scoring</span>
                 </li>
                 <li className="flex items-center space-x-2">
                   <Check className="w-4 h-4 text-green-500" />
@@ -235,7 +238,7 @@ export default function Landing({ onGetStarted }) {
               </div>
               <h3 className="text-xl font-bold mb-2">Enterprise Security</h3>
               <p className="text-slate-400 mb-6">
-                GDPR & CCPA compliant. SOC 2 Type II. AES-256 encryption. Your data is safe with us.
+                GDPR & CCPA compliant. AES-256 encryption. Your data is safe with us.
               </p>
               <ul className="space-y-2 text-sm text-slate-300">
                 <li className="flex items-center space-x-2">
@@ -364,22 +367,26 @@ export default function Landing({ onGetStarted }) {
             {/* Starter Plan */}
             <div className="bg-gradient-to-br from-slate-800 to-slate-700/50 border border-slate-700 rounded-xl p-8">
               <h3 className="text-2xl font-bold mb-2">Starter</h3>
-              <p className="text-slate-400 mb-6">For freelancers & small teams</p>
+              <p className="text-slate-400 mb-6">For solo contractors & small businesses</p>
               <div className="mb-6">
-                <span className="text-4xl font-bold">$99</span>
+                <span className="text-4xl font-bold">$497</span>
                 <span className="text-slate-400">/month</span>
               </div>
-              <button className="w-full bg-slate-700 hover:bg-slate-600 text-white py-3 rounded-lg font-semibold mb-8 transition">
-                Get Started
+              <button onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })} className="w-full bg-slate-700 hover:bg-slate-600 text-white py-3 rounded-lg font-semibold mb-8 transition">
+                Buy Now
               </button>
               <ul className="space-y-4 text-slate-300">
                 <li className="flex items-start space-x-3">
                   <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                  <span>10,000 leads/month</span>
+                  <span>5,000 leads/month</span>
                 </li>
                 <li className="flex items-start space-x-3">
                   <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                  <span>AI qualification</span>
+                  <span>AI lead qualification</span>
+                </li>
+                <li className="flex items-start space-x-3">
+                  <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                  <span>Auto DM & Auto Comment</span>
                 </li>
                 <li className="flex items-start space-x-3">
                   <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
@@ -392,30 +399,30 @@ export default function Landing({ onGetStarted }) {
               </ul>
             </div>
 
-            {/* Pro Plan (Featured) */}
+            {/* Growth Plan (Featured) */}
             <div className="bg-gradient-to-br from-blue-900 to-cyan-900/50 border border-blue-500/50 rounded-xl p-8 relative transform scale-105">
               <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
                 <div className="bg-blue-600 text-white px-4 py-1 rounded-full text-sm font-semibold">
                   Most Popular
                 </div>
               </div>
-              <h3 className="text-2xl font-bold mb-2">Pro</h3>
-              <p className="text-slate-300 mb-6">For growing sales teams</p>
+              <h3 className="text-2xl font-bold mb-2">Growth</h3>
+              <p className="text-slate-300 mb-6">For growing businesses ready to scale</p>
               <div className="mb-6">
-                <span className="text-4xl font-bold">$499</span>
+                <span className="text-4xl font-bold">$2,000</span>
                 <span className="text-slate-300">/month</span>
               </div>
-              <button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold mb-8 transition">
-                Get Started
+              <button onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })} className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold mb-8 transition">
+                Buy Now
               </button>
               <ul className="space-y-4 text-slate-300">
                 <li className="flex items-start space-x-3">
                   <Check className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
-                  <span>100,000 leads/month</span>
+                  <span>Unlimited lead scraping</span>
                 </li>
                 <li className="flex items-start space-x-3">
                   <Check className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
-                  <span>AI qualification</span>
+                  <span>Unlimited Auto DM & Auto Comment</span>
                 </li>
                 <li className="flex items-start space-x-3">
                   <Check className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
@@ -427,7 +434,7 @@ export default function Landing({ onGetStarted }) {
                 </li>
                 <li className="flex items-start space-x-3">
                   <Check className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
-                  <span>API access</span>
+                  <span>Dedicated account manager</span>
                 </li>
               </ul>
             </div>
@@ -435,25 +442,25 @@ export default function Landing({ onGetStarted }) {
             {/* Enterprise Plan */}
             <div className="bg-gradient-to-br from-slate-800 to-slate-700/50 border border-slate-700 rounded-xl p-8">
               <h3 className="text-2xl font-bold mb-2">Enterprise</h3>
-              <p className="text-slate-400 mb-6">For large organizations</p>
+              <p className="text-slate-400 mb-6">For agencies & large organizations</p>
               <div className="mb-6">
                 <span className="text-3xl font-bold">Custom</span>
               </div>
-              <button className="w-full bg-slate-700 hover:bg-slate-600 text-white py-3 rounded-lg font-semibold mb-8 transition">
+              <button onClick={() => window.location.href = 'mailto:sales@agentlead.io?subject=Enterprise%20Plan%20Inquiry'} className="w-full bg-slate-700 hover:bg-slate-600 text-white py-3 rounded-lg font-semibold mb-8 transition">
                 Contact Sales
               </button>
               <ul className="space-y-4 text-slate-300">
                 <li className="flex items-start space-x-3">
                   <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                  <span>Unlimited leads</span>
+                  <span>Everything in Growth</span>
                 </li>
                 <li className="flex items-start space-x-3">
                   <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                  <span>Custom integrations</span>
+                  <span>Multi-client management</span>
                 </li>
                 <li className="flex items-start space-x-3">
                   <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                  <span>Dedicated support</span>
+                  <span>White-label dashboards</span>
                 </li>
                 <li className="flex items-start space-x-3">
                   <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
@@ -482,7 +489,7 @@ export default function Landing({ onGetStarted }) {
               {
                 name: 'Sarah Chen',
                 title: 'Sales Director, TechFlow',
-                quote: 'Lead Scraper cut our lead generation time from days to hours. The AI qualification is scary accurate.',
+                quote: 'AgentLead cut our lead generation time from days to hours. The AI qualification is incredibly accurate.',
                 rating: 5
               },
               {
@@ -525,8 +532,8 @@ export default function Landing({ onGetStarted }) {
           <div className="space-y-4">
             {[
               {
-                q: 'Is Lead Scraper GDPR & CCPA compliant?',
-                a: 'Yes! We provide comprehensive compliance tools. See our Data Processing Agreement for full details.'
+                q: 'Is AgentLead GDPR & CCPA compliant?',
+                a: 'We provide tools to help with compliance. However, you are responsible for ensuring your use of scraped data complies with all applicable laws in your jurisdiction, including GDPR, CCPA, and anti-spam regulations.'
               },
               {
                 q: 'Can I integrate with my CRM?',
@@ -538,11 +545,11 @@ export default function Landing({ onGetStarted }) {
               },
               {
                 q: 'How accurate is the AI qualification?',
-                a: 'Our AI achieves 94% accuracy on lead scoring. Accuracy depends on the data quality and your specific criteria.'
+                a: 'Our AI scoring system analyzes engagement signals, business size, and online activity to prioritize leads. Accuracy varies depending on data quality and your specific criteria. We recommend using AI scores as a prioritization tool alongside your own judgment.'
               },
               {
-                q: 'Do you offer a free trial?',
-                a: 'Yes! Every plan includes a 3-day free trial. You\'ll enter your card upfront but won\'t be charged until the trial ends. We send a cancellation reminder before your first charge.'
+                q: 'Can I try before committing?',
+                a: 'We don\'t offer a free trial, but you can cancel anytime if it\'s not the right fit. Email support@agentlead.io if you have questions before purchasing.'
               },
               {
                 q: 'What kind of support do you offer?',
@@ -581,11 +588,11 @@ export default function Landing({ onGetStarted }) {
               type="submit"
               className="w-full bg-slate-900 hover:bg-slate-800 text-white px-8 py-3 rounded-lg font-bold flex items-center justify-center space-x-2 transition"
             >
-              <span>Start Free Trial</span>
+              <span>Get Started</span>
               <ArrowRight className="w-5 h-5" />
             </button>
           </form>
-          <p className="text-blue-100 text-sm">No credit card required • Get started in 2 minutes</p>
+          <p className="text-blue-100 text-sm">Cancel anytime • Get started in 2 minutes</p>
         </div>
       </section>
 
@@ -596,10 +603,10 @@ export default function Landing({ onGetStarted }) {
             <div>
               <div className="flex items-center space-x-2 mb-4">
                 <Zap className="w-6 h-6 text-blue-500" />
-                <span className="font-bold">Lead Scraper</span>
+                <span className="font-bold">AgentLead</span>
               </div>
               <p className="text-slate-400 text-sm">
-                The fastest way to find and qualify business leads.
+                AI-powered lead generation and outreach automation for businesses that want to scale.
               </p>
             </div>
             <div>
@@ -613,24 +620,22 @@ export default function Landing({ onGetStarted }) {
             <div>
               <h4 className="font-bold mb-4">Legal</h4>
               <ul className="space-y-2 text-slate-400 text-sm">
-                <li><a href="/legal/terms" className="hover:text-blue-400 transition">Terms of Service</a></li>
-                <li><a href="/legal/privacy" className="hover:text-blue-400 transition">Privacy Policy</a></li>
-                <li><a href="/legal/dpa" className="hover:text-blue-400 transition">Data Processing</a></li>
+                <li><a href="/terms" className="hover:text-blue-400 transition">Terms of Service</a></li>
+                <li><a href="/privacy" className="hover:text-blue-400 transition">Privacy Policy</a></li>
+                <li><a href="/refund-policy" className="hover:text-blue-400 transition">Refund Policy</a></li>
               </ul>
             </div>
             <div>
               <h4 className="font-bold mb-4">Contact</h4>
               <ul className="space-y-2 text-slate-400 text-sm">
-                <li><a href="mailto:support@leadscraper.io" className="hover:text-blue-400 transition">support@leadscraper.io</a></li>
-                <li className="hover:text-blue-400 transition">Twitter</li>
-                <li className="hover:text-blue-400 transition">LinkedIn</li>
+                <li><a href="mailto:support@agentlead.io" className="hover:text-blue-400 transition">support@agentlead.io</a></li>
               </ul>
             </div>
           </div>
 
           <div className="border-t border-slate-700 pt-8">
             <p className="text-center text-slate-400 text-sm">
-              © 2026 Lead Scraper. All rights reserved. | Built with ❤️ for sales teams.
+              &copy; 2026 AgentLead. All rights reserved.
             </p>
           </div>
         </div>

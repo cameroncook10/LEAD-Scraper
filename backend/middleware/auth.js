@@ -1,6 +1,6 @@
 /**
  * Auth Middleware — Supabase JWT verification
- * 
+ *
  * Verifies the Supabase access token from the Authorization header.
  * This replaces the old custom JWT approach with Supabase Auth.
  */
@@ -10,8 +10,13 @@ import { supabase } from '../server.js';
  * Require authentication via Supabase JWT
  */
 export const requireAuth = async (req, res, next) => {
-  // Skip auth when Supabase is not configured (local/Electron dev mode)
-  if (!supabase) return next();
+  // If Supabase is not configured, the service cannot authenticate users
+  if (!supabase) {
+    return res.status(503).json({
+      error: 'Service not configured',
+      message: 'Authentication service is unavailable. Please configure Supabase credentials.'
+    });
+  }
 
   const authHeader = req.headers.authorization;
   const token = authHeader?.split(' ')[1];

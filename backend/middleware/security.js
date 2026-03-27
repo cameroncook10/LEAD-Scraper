@@ -22,11 +22,13 @@ export const securityHeaders = (req, res, next) => {
   }
   // Referrer policy
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-  // Content Security Policy (relaxed in Electron to allow file:// and localhost)
+  // Content Security Policy
   if (isElectron) {
+    // Electron needs localhost access and inline scripts for BrowserWindow
     res.setHeader('Content-Security-Policy', "default-src 'self' http://localhost:* file:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'");
   } else {
-    res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'");
+    // Production CSP: no unsafe-inline anywhere
+    res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https:; font-src 'self'; connect-src 'self' https://*.supabase.co https://api.stripe.com");
   }
   // Permissions policy
   res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
@@ -93,9 +95,28 @@ export const requestId = (req, res, next) => {
   next();
 };
 
+/**
+ * Validate CORS configuration on startup.
+ * In non-Electron mode, ALLOWED_ORIGINS must be explicitly set —
+ * falling back to '*' is a security risk in production.
+ * Call this once at server startup (not per-request).
+ */
+export const validateCorsConfig = () => {
+  const isElectron = process.env.ELECTRON === '1';
+  if (!isElectron && !process.env.ALLOWED_ORIGINS) {
+    throw new Error(
+      'SECURITY ERROR: ALLOWED_ORIGINS environment variable is not set. ' +
+      'Set ALLOWED_ORIGINS to a comma-separated list of allowed origins ' +
+      '(e.g. "https://yourdomain.com,https://app.yourdomain.com"). ' +
+      'Refusing to start with wildcard CORS in non-Electron mode.'
+    );
+  }
+};
+
 export default {
   securityHeaders,
   enforceHttps,
   sanitizeInput,
-  requestId
+  requestId,
+  validateCorsConfig
 };

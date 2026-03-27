@@ -34,8 +34,9 @@ export function Footer() {
           <div>
             <h4 className="font-semibold text-white mb-4">Legal</h4>
             <ul className="space-y-3 text-gray-500 text-sm">
-              <li><a href="mailto:support@agentlead.io?subject=Terms%20of%20Service" className="hover:text-cyan-400 transition-colors">Terms of Service</a></li>
-              <li><a href="mailto:support@agentlead.io?subject=Privacy%20Policy" className="hover:text-cyan-400 transition-colors">Privacy Policy</a></li>
+              <li><a href="/terms" className="hover:text-cyan-400 transition-colors">Terms of Service</a></li>
+              <li><a href="/privacy" className="hover:text-cyan-400 transition-colors">Privacy Policy</a></li>
+              <li><a href="/refund-policy" className="hover:text-cyan-400 transition-colors">Refund Policy</a></li>
             </ul>
           </div>
 
@@ -50,7 +51,7 @@ export function Footer() {
 
         <div className="border-t border-gray-800 pt-8">
           <p className="text-center text-gray-600 text-sm">
-            © 2026 Agent Lead. All rights reserved. Built for businesses that want to win.
+            &copy; 2026 AgentLead. All rights reserved. Built for businesses that want to win.
           </p>
         </div>
       </div>

@@ -57,33 +57,24 @@ export default function DownloadPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15, duration: 0.5 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16"
+            className="flex flex-col items-center gap-4 mb-16"
           >
             <a
-              href={`${GITHUB_RELEASES_URL}/download/AgentLead-Setup.exe`}
-              className={`flex items-center gap-3 px-8 py-4 rounded-xl font-semibold transition-all ${
-                platform === 'win'
-                  ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white hover:shadow-lg hover:shadow-cyan-500/25'
-                  : 'bg-white/5 border border-white/10 text-gray-300 hover:bg-white/10'
-              }`}
+              href={GITHUB_RELEASES_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 px-10 py-4 rounded-xl font-semibold transition-all bg-gradient-to-r from-cyan-500 to-blue-500 text-white hover:shadow-lg hover:shadow-cyan-500/25 text-lg"
             >
-              <Monitor className="w-5 h-5" />
+              <Monitor className="w-6 h-6" />
               Download for Windows
-              {platform === 'win' && <ArrowRight className="w-4 h-4" />}
+              <ArrowRight className="w-5 h-5" />
             </a>
+            <p className="text-xs text-gray-500">Requires Windows 10 or later</p>
 
-            <a
-              href={`${GITHUB_RELEASES_URL}/download/AgentLead.dmg`}
-              className={`flex items-center gap-3 px-8 py-4 rounded-xl font-semibold transition-all ${
-                platform === 'mac'
-                  ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white hover:shadow-lg hover:shadow-cyan-500/25'
-                  : 'bg-white/5 border border-white/10 text-gray-300 hover:bg-white/10'
-              }`}
-            >
+            <div className="flex items-center gap-3 px-10 py-4 rounded-xl font-semibold bg-white/5 border border-white/10 text-gray-500 cursor-not-allowed mt-2">
               <Apple className="w-5 h-5" />
-              Download for Mac
-              {platform === 'mac' && <ArrowRight className="w-4 h-4" />}
-            </a>
+              macOS — Coming Soon
+            </div>
           </motion.div>
 
           {/* Features row */}
@@ -131,7 +122,7 @@ export default function DownloadPage() {
           </motion.div>
 
           <p className="mt-12 text-xs text-gray-600">
-            Requires Windows 10+ or macOS 11+. Already installed?{' '}
+            Already installed?{' '}
             <a href="agentlead://launch" className="text-cyan-500 hover:underline">
               Launch AgentLead
             </a>

@@ -2,6 +2,10 @@
 -- Agent Lead — Complete Database Schema
 -- Copy this ENTIRE file and paste into Supabase SQL Editor
 -- (Dashboard → SQL Editor → New Query → Paste → Run)
+--
+-- NOTE: RLS is enabled on every table below. Full RLS policies
+-- (SELECT/INSERT/UPDATE/DELETE per user) are defined in
+-- migrations/002_rls_policies.sql
 -- ════════════════════════════════════════════════════════════
 
 -- ── Core Tables ─────────────────────────────────────────────
@@ -23,6 +27,9 @@ CREATE TABLE IF NOT EXISTS leads (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- RLS enabled; policies in migrations/002_rls_policies.sql
+ALTER TABLE leads ENABLE ROW LEVEL SECURITY;
+
 CREATE TABLE IF NOT EXISTS scrape_jobs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   status TEXT DEFAULT 'pending',
@@ -36,6 +43,9 @@ CREATE TABLE IF NOT EXISTS scrape_jobs (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- RLS enabled; policies in migrations/002_rls_policies.sql
+ALTER TABLE scrape_jobs ENABLE ROW LEVEL SECURITY;
+
 CREATE TABLE IF NOT EXISTS job_logs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   job_id UUID REFERENCES scrape_jobs(id) ON DELETE CASCADE,
@@ -43,6 +53,9 @@ CREATE TABLE IF NOT EXISTS job_logs (
   level TEXT DEFAULT 'info',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- RLS enabled; policies in migrations/002_rls_policies.sql
+ALTER TABLE job_logs ENABLE ROW LEVEL SECURITY;
 
 CREATE INDEX IF NOT EXISTS idx_leads_source ON leads(source);
 CREATE INDEX IF NOT EXISTS idx_leads_ai_score ON leads(ai_score);
@@ -66,6 +79,9 @@ CREATE TABLE IF NOT EXISTS message_templates (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 
+-- RLS enabled; policies in migrations/002_rls_policies.sql
+ALTER TABLE message_templates ENABLE ROW LEVEL SECURITY;
+
 CREATE TABLE IF NOT EXISTS email_campaigns (
   id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -81,6 +97,9 @@ CREATE TABLE IF NOT EXISTS email_campaigns (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
+
+-- RLS enabled; policies in migrations/002_rls_policies.sql
+ALTER TABLE email_campaigns ENABLE ROW LEVEL SECURITY;
 
 CREATE TABLE IF NOT EXISTS campaign_deliveries (
   id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
@@ -98,6 +117,9 @@ CREATE TABLE IF NOT EXISTS campaign_deliveries (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 
+-- RLS enabled; policies in migrations/002_rls_policies.sql
+ALTER TABLE campaign_deliveries ENABLE ROW LEVEL SECURITY;
+
 CREATE TABLE IF NOT EXISTS message_queue (
   id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
   delivery_id BIGINT REFERENCES campaign_deliveries(id) ON DELETE CASCADE,
@@ -108,6 +130,9 @@ CREATE TABLE IF NOT EXISTS message_queue (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
+
+-- RLS enabled; policies in migrations/002_rls_policies.sql
+ALTER TABLE message_queue ENABLE ROW LEVEL SECURITY;
 
 CREATE TABLE IF NOT EXISTS campaign_analytics (
   id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
@@ -123,6 +148,9 @@ CREATE TABLE IF NOT EXISTS campaign_analytics (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 
+-- RLS enabled; policies in migrations/002_rls_policies.sql
+ALTER TABLE campaign_analytics ENABLE ROW LEVEL SECURITY;
+
 CREATE TABLE IF NOT EXISTS unsubscribes (
   id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -132,6 +160,9 @@ CREATE TABLE IF NOT EXISTS unsubscribes (
   reason TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
+
+-- RLS enabled; policies in migrations/002_rls_policies.sql
+ALTER TABLE unsubscribes ENABLE ROW LEVEL SECURITY;
 
 -- ── API Keys (for Edge Function) ────────────────────────────
 
@@ -144,6 +175,9 @@ CREATE TABLE IF NOT EXISTS api_keys (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
   UNIQUE(user_id, provider)
 );
+
+-- RLS enabled; policies defined inline below
+ALTER TABLE api_keys ENABLE ROW LEVEL SECURITY;
 
 -- ── Indexes ─────────────────────────────────────────────────
 
@@ -187,9 +221,7 @@ DO $$ BEGIN
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
 
--- ── RLS Policies ────────────────────────────────────────────
-
-ALTER TABLE api_keys ENABLE ROW LEVEL SECURITY;
+-- ── RLS Policies (api_keys only — others in 002_rls_policies.sql) ──
 
 DO $$ BEGIN
   CREATE POLICY "Users see own keys" ON api_keys FOR SELECT USING (auth.uid() = user_id);
@@ -202,4 +234,5 @@ END $$;
 
 -- ════════════════════════════════════════════════════════════
 -- DONE! All tables created successfully.
+-- Run migrations/002_rls_policies.sql next for full RLS policies.
 -- ════════════════════════════════════════════════════════════

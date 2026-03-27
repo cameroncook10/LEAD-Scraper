@@ -1,11 +1,20 @@
 const { app, BrowserWindow, protocol, shell, ipcMain, session } = require('electron');
 const { autoUpdater } = require('electron-updater');
 const path = require('path');
-const { fork } = require('child_process');
+const { spawn } = require('child_process');
 const crypto = require('crypto');
 const Store = require('electron-store');
 
 const isDev = !app.isPackaged;
+
+// ── Global error handlers ──
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught exception:', error);
+  // Log to file or future Sentry
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled rejection:', reason);
+});
 
 // Lazy-init store with encryption (app.getPath not available until ready)
 let _store;
@@ -78,7 +87,8 @@ function startBackend() {
     ? path.join(__dirname, '..', 'backend')
     : path.join(process.resourcesPath, 'backend');
 
-  backendProcess = fork(backendPath, [], {
+  // Use system node (not Electron's) to properly support ESM modules
+  backendProcess = spawn('node', [backendPath], {
     cwd: backendDir,
     env: {
       ...process.env,
@@ -88,7 +98,7 @@ function startBackend() {
       SUPABASE_URL: getStore().get('supabaseUrl') || process.env.SUPABASE_URL || '',
       SUPABASE_ANON_KEY: getStore().get('supabaseAnonKey') || process.env.SUPABASE_ANON_KEY || '',
     },
-    stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
+    stdio: ['pipe', 'pipe', 'pipe'],
   });
 
   backendProcess.stdout.on('data', (data) => {
@@ -138,6 +148,7 @@ function createWindow() {
       contextIsolation: true,
       webSecurity: true,
       allowRunningInsecureContent: false,
+      devTools: isDev,
     },
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
     backgroundColor: '#050505',
@@ -199,6 +210,60 @@ ipcMain.handle('open-external', (_event, url) => {
   } catch {}
 });
 
+// ── Subscription cache IPC (encrypted electron-store) ──
+ipcMain.handle('get-subscription-cache', () => {
+  try {
+    return getStore().get('subscriptionCache') || null;
+  } catch {
+    return null;
+  }
+});
+
+ipcMain.handle('set-subscription-cache', (_event, data) => {
+  try {
+    getStore().set('subscriptionCache', data);
+    return true;
+  } catch {
+    return false;
+  }
+});
+
+ipcMain.handle('clear-subscription-cache', () => {
+  try {
+    getStore().delete('subscriptionCache');
+    return true;
+  } catch {
+    return false;
+  }
+});
+
+// ── Auth token IPC (encrypted electron-store) ──
+ipcMain.handle('get-auth-token', () => {
+  try {
+    return getStore().get('authToken') || null;
+  } catch {
+    return null;
+  }
+});
+
+ipcMain.handle('set-auth-token', (_event, tokenData) => {
+  try {
+    getStore().set('authToken', tokenData);
+    return true;
+  } catch {
+    return false;
+  }
+});
+
+ipcMain.handle('clear-auth-token', () => {
+  try {
+    getStore().delete('authToken');
+    return true;
+  } catch {
+    return false;
+  }
+});
+
 // ── Auto-update events ──
 autoUpdater.on('update-available', () => {
   if (mainWindow && !mainWindow.isDestroyed()) {
@@ -237,17 +302,33 @@ app.whenReady().then(async () => {
   }
 });
 
-app.on('window-all-closed', () => {
+// ── Cleanup helper ──
+function killBackendProcess() {
   if (backendProcess) {
-    backendProcess.kill();
+    try {
+      backendProcess.kill();
+    } catch (err) {
+      console.error('[backend] Failed to kill process:', err);
+    }
     backendProcess = null;
   }
+}
+
+app.on('window-all-closed', () => {
+  killBackendProcess();
   app.quit();
 });
 
 app.on('before-quit', () => {
-  if (backendProcess) {
-    backendProcess.kill();
-    backendProcess = null;
-  }
+  killBackendProcess();
+});
+
+// Ensure cleanup on renderer crash
+app.on('render-process-gone', (_event, _webContents, details) => {
+  console.error('Renderer process gone:', details.reason);
+  killBackendProcess();
+});
+
+app.on('child-process-gone', (_event, details) => {
+  console.error('Child process gone:', details.type, details.reason);
 });

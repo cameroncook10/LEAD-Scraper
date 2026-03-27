@@ -10,20 +10,34 @@ export function AuthProvider({ children }) {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Check existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user || null);
-      setLoading(false);
-    });
+    initializeAuth();
 
     // Listen for auth state changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setSession(session);
       setUser(session?.user || null);
       setLoading(false);
+
+      // Persist tokens on successful auth
+      if (session?.refresh_token) {
+        try {
+          await window.electronAPI?.setAuthToken?.({
+            access_token: session.access_token,
+            refresh_token: session.refresh_token,
+          });
+        } catch (err) {
+          console.error('Failed to persist auth token:', err);
+        }
+      }
+
+      // Clear stored tokens on sign out
+      if (!session) {
+        try {
+          await window.electronAPI?.clearAuthToken?.();
+        } catch {}
+      }
     });
 
     // Listen for OAuth callback from Electron main process
@@ -56,6 +70,58 @@ export function AuthProvider({ children }) {
 
     return () => subscription?.unsubscribe();
   }, []);
+
+  /**
+   * Initialize auth: try to restore session from encrypted store,
+   * then fall back to Supabase's own session check.
+   */
+  async function initializeAuth() {
+    try {
+      // First, check if Supabase already has a valid session in memory
+      const { data: { session: existingSession } } = await supabase.auth.getSession();
+
+      if (existingSession) {
+        setSession(existingSession);
+        setUser(existingSession.user || null);
+        setLoading(false);
+        return;
+      }
+
+      // No in-memory session — try to restore from encrypted electron-store
+      const storedToken = await window.electronAPI?.getAuthToken?.();
+
+      if (storedToken?.access_token && storedToken?.refresh_token) {
+        const { data, error: restoreError } = await supabase.auth.setSession({
+          access_token: storedToken.access_token,
+          refresh_token: storedToken.refresh_token,
+        });
+
+        if (restoreError) {
+          console.error('Failed to restore session from stored token:', restoreError);
+          // Token is stale/invalid — clear it
+          try {
+            await window.electronAPI?.clearAuthToken?.();
+          } catch {}
+          setSession(null);
+          setUser(null);
+        } else if (data?.session) {
+          setSession(data.session);
+          setUser(data.session.user || null);
+          // Update stored tokens with refreshed values
+          try {
+            await window.electronAPI?.setAuthToken?.({
+              access_token: data.session.access_token,
+              refresh_token: data.session.refresh_token,
+            });
+          } catch {}
+        }
+      }
+    } catch (err) {
+      console.error('Auth initialization error:', err);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   const signInWithGoogle = async () => {
     try {
@@ -97,6 +163,13 @@ export function AuthProvider({ children }) {
   const signOut = async () => {
     try {
       setLoading(true);
+
+      // Clear stored tokens
+      try {
+        await window.electronAPI?.clearAuthToken?.();
+        await window.electronAPI?.clearSubscriptionCache?.();
+      } catch {}
+
       const { error } = await supabase.auth.signOut();
       if (error) {
         setError(error);

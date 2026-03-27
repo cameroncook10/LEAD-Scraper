@@ -3,10 +3,7 @@ import { motion } from "framer-motion";
 import { ArrowRight, Play, Zap } from "lucide-react";
 import { AnimatedBackground } from "@/components/ui/AnimatedBackground";
 import NeuralBackground from "@/components/ui/flow-field-background";
-import { useNavigate } from "react-router-dom";
-
 export function HeroSection() {
-  const navigate = useNavigate();
   return (
     <section className="relative min-h-screen flex items-center justify-center pt-24 px-6 overflow-hidden">
       {/* Layer 1: particle flow-field (existing) */}
@@ -83,7 +80,7 @@ export function HeroSection() {
           className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12"
         >
           <motion.button
-            onClick={() => navigate('/dashboard')}
+            onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             className="group relative bg-cyan-500 hover:bg-cyan-400 text-gray-950 px-8 py-4 rounded-xl font-bold text-lg transition-all overflow-hidden shadow-2xl shadow-cyan-500/30"
@@ -94,12 +91,13 @@ export function HeroSection() {
               transition={{ duration: 2, repeat: Infinity, repeatDelay: 1 }}
             />
             <span className="relative z-10 flex items-center gap-2">
-              Start 3-Day Trial
+              Get Started
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </span>
           </motion.button>
 
           <motion.button
+            onClick={() => document.getElementById('dashboard')?.scrollIntoView({ behavior: 'smooth' })}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             className="backdrop-blur-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white px-8 py-4 rounded-xl font-bold text-lg transition-all flex items-center gap-2 shadow-lg shadow-cyan-500/10"

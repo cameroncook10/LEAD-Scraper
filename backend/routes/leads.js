@@ -54,6 +54,68 @@ router.get('/', async (req, res, next) => {
   }
 });
 
+// Export leads as CSV (GET — streams CSV for the authenticated user's leads)
+router.get('/export', async (req, res, next) => {
+  try {
+    const { userId } = req.user;
+    const {
+      source,
+      category,
+      minScore = 0,
+      maxScore = 100,
+    } = req.query;
+
+    let query = req.app.locals.supabase
+      .from('leads')
+      .select('*')
+      .eq('user_id', userId);
+
+    if (source) {
+      query = query.eq('source', source);
+    }
+    if (category) {
+      query = query.eq('ai_category', category);
+    }
+
+    query = query
+      .gte('ai_score', parseInt(minScore))
+      .lte('ai_score', parseInt(maxScore))
+      .order('ai_score', { ascending: false });
+
+    const { data, error } = await query;
+
+    if (error) throw error;
+
+    const leads = data || [];
+
+    // Format data for CSV export — include all lead fields
+    const csvData = leads.map(lead => ({
+      'ID': lead.id,
+      'Name': lead.name || '',
+      'Phone': lead.phone || '',
+      'Email': lead.email || '',
+      'Website': lead.website || '',
+      'Address': lead.address || '',
+      'Business Type': lead.business_type || '',
+      'AI Score': lead.ai_score ?? '',
+      'Category': lead.ai_category || '',
+      'Confidence': lead.ai_confidence != null ? (lead.ai_confidence * 100).toFixed(0) + '%' : '',
+      'Source': lead.source || '',
+      'Created': lead.created_at ? new Date(lead.created_at).toISOString() : '',
+      'Updated': lead.updated_at ? new Date(lead.updated_at).toISOString() : '',
+    }));
+
+    const csv = stringify(csvData, { header: true });
+
+    const filename = `leads-${new Date().toISOString().split('T')[0]}.csv`;
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(csv);
+  } catch (error) {
+    next(error);
+  }
+});
+
 // Get lead by ID
 router.get('/:id', async (req, res, next) => {
   try {

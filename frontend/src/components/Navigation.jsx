@@ -26,7 +26,7 @@ export const Navigation = ({ currentPage, onPageChange, pages = [] }) => {
           {/* Logo */}
           <div className="flex-shrink-0">
             <h1 className="text-2xl font-bold bg-gradient-to-r from-cyan-600 to-indigo-600 bg-clip-text text-transparent">
-              LeadScraper
+              AgentLead
             </h1>
           </div>
 
@@ -101,36 +101,34 @@ export const Footer = () => (
       <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
         <div>
           <h3 className="text-sm font-semibold text-slate-900 mb-4">About</h3>
-          <p className="text-sm text-slate-600">LeadScraper: AI-powered lead qualification and automated outreach</p>
+          <p className="text-sm text-slate-600">AgentLead: AI-powered lead qualification and automated outreach</p>
         </div>
         <div>
           <h3 className="text-sm font-semibold text-slate-900 mb-4">Features</h3>
           <ul className="space-y-2 text-sm text-slate-600">
-            <li><a href="#" className="hover:text-cyan-600">Web Scraping</a></li>
-            <li><a href="#" className="hover:text-cyan-600">Lead Qualification</a></li>
-            <li><a href="#" className="hover:text-cyan-600">Auto-Messaging</a></li>
+            <li><a href="#features" className="hover:text-cyan-600">Web Scraping</a></li>
+            <li><a href="#features" className="hover:text-cyan-600">Lead Qualification</a></li>
+            <li><a href="#features" className="hover:text-cyan-600">Auto-Messaging</a></li>
           </ul>
         </div>
         <div>
-          <h3 className="text-sm font-semibold text-slate-900 mb-4">Resources</h3>
+          <h3 className="text-sm font-semibold text-slate-900 mb-4">Contact</h3>
           <ul className="space-y-2 text-sm text-slate-600">
-            <li><a href="#" className="hover:text-cyan-600">Documentation</a></li>
-            <li><a href="#" className="hover:text-cyan-600">API Reference</a></li>
-            <li><a href="#" className="hover:text-cyan-600">Support</a></li>
+            <li><a href="mailto:support@agentlead.io" className="hover:text-cyan-600">support@agentlead.io</a></li>
           </ul>
         </div>
         <div>
           <h3 className="text-sm font-semibold text-slate-900 mb-4">Legal</h3>
           <ul className="space-y-2 text-sm text-slate-600">
-            <li><a href="#" className="hover:text-cyan-600">Privacy</a></li>
-            <li><a href="#" className="hover:text-cyan-600">Terms</a></li>
-            <li><a href="#" className="hover:text-cyan-600">Security</a></li>
+            <li><a href="/privacy" className="hover:text-cyan-600">Privacy Policy</a></li>
+            <li><a href="/terms" className="hover:text-cyan-600">Terms of Service</a></li>
+            <li><a href="/refund-policy" className="hover:text-cyan-600">Refund Policy</a></li>
           </ul>
         </div>
       </div>
       <div className="border-t border-slate-200 pt-8">
         <p className="text-center text-sm text-slate-600">
-          © 2024 LeadScraper. All rights reserved.
+          &copy; 2026 AgentLead. All rights reserved.
         </p>
       </div>
     </div>

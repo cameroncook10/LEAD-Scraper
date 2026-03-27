@@ -1,8 +1,9 @@
 /**
  * Message Queue Service
- * 
+ *
  * Processes the `message_queue` table in Supabase.
- * Handles rate limiting, retries, and delivery status tracking.
+ * Handles rate limiting, retries with exponential backoff,
+ * dead letter handling, and delivery status tracking.
  */
 import { supabase } from '../server.js';
 import { emailService, renderTemplate } from './emailService.js';
@@ -24,18 +25,18 @@ const windowStart = {};
 function checkRateLimit(provider) {
   const now = Date.now();
   const limit = RATE_LIMITS[provider] || 50;
-  
+
   if (!windowStart[provider] || now - windowStart[provider] > 3600000) {
     // Reset window
     windowStart[provider] = now;
     sendCounts[provider] = 0;
   }
-  
+
   if (sendCounts[provider] >= limit) {
     const waitMs = 3600000 - (now - windowStart[provider]);
     return { allowed: false, waitMs, remaining: 0 };
   }
-  
+
   return { allowed: true, waitMs: 0, remaining: limit - sendCounts[provider] };
 }
 
@@ -61,7 +62,7 @@ export async function enqueueEmailCampaign({ campaignId, deliveryId, leadId, tem
       .insert(queueEntry);
 
     if (error) throw error;
-    
+
     console.log(`[Queue] Enqueued email delivery ${deliveryId} for campaign ${campaignId}`);
     return { success: true };
   } catch (error) {
@@ -88,7 +89,7 @@ export async function enqueueSMSCampaign({ campaignId, deliveryId, leadId, templ
       .insert(queueEntry);
 
     if (error) throw error;
-    
+
     console.log(`[Queue] Enqueued ${messageType} delivery ${deliveryId} for campaign ${campaignId}`);
     return { success: true };
   } catch (error) {
@@ -115,12 +116,120 @@ export async function enqueueDM({ deliveryId, provider, scheduleTime }) {
       .insert(queueEntry);
 
     if (error) throw error;
-    
+
     console.log(`[Queue] Enqueued ${provider} DM delivery ${deliveryId}`);
     return { success: true };
   } catch (error) {
     console.error(`[Queue] Failed to enqueue DM:`, error);
     return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Send a message through the appropriate provider.
+ * Returns { success: boolean, messageId?: string, error?: string }
+ */
+async function deliverMessage(provider, delivery) {
+  const lead = delivery?.leads;
+  const campaign = delivery?.email_campaigns;
+
+  switch (provider) {
+    case 'email': {
+      if (!lead?.email) {
+        return { success: false, error: 'Lead has no email address' };
+      }
+      try {
+        const result = await emailService.sendEmail({
+          to: lead.email,
+          subject: campaign?.subject || 'Message from LeadScraper',
+          html: campaign?.html_body || campaign?.body || '',
+          text: campaign?.text_body || '',
+          headers: {
+            'List-Unsubscribe': `<${process.env.FRONTEND_URL || 'http://localhost:3001'}/unsubscribe>`,
+            'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+          },
+        });
+        return { success: true, messageId: result.messageId };
+      } catch (err) {
+        return { success: false, error: err.message };
+      }
+    }
+
+    case 'sms': {
+      if (!lead?.phone) {
+        return { success: false, error: 'Lead has no phone number' };
+      }
+      try {
+        const result = await smsService.sendSMS({
+          to: lead.phone,
+          body: campaign?.text_body || campaign?.body || '',
+          trackingId: delivery?.id,
+        });
+        return { success: true, messageId: result.messageId };
+      } catch (err) {
+        return { success: false, error: err.message };
+      }
+    }
+
+    case 'whatsapp': {
+      if (!lead?.phone) {
+        return { success: false, error: 'Lead has no phone number' };
+      }
+      try {
+        const result = await smsService.sendWhatsApp({
+          to: lead.phone,
+          body: campaign?.text_body || campaign?.body || '',
+          trackingId: delivery?.id,
+        });
+        return { success: true, messageId: result.messageId };
+      } catch (err) {
+        return { success: false, error: err.message };
+      }
+    }
+
+    case 'instagram': {
+      try {
+        const { sendInstagramDM } = await import('./dmProviders/instagram.js');
+        return await sendInstagramDM(delivery);
+      } catch (err) {
+        return { success: false, error: err.message };
+      }
+    }
+
+    case 'facebook': {
+      try {
+        const { sendFacebookMessage } = await import('./dmProviders/facebook.js');
+        return await sendFacebookMessage(delivery);
+      } catch (err) {
+        return { success: false, error: err.message };
+      }
+    }
+
+    default:
+      return { success: false, error: `Unknown provider: ${provider}` };
+  }
+}
+
+/**
+ * Move a permanently failed message to the dead_letter_queue table.
+ */
+async function moveToDeadLetter(item, errorMessage) {
+  try {
+    await supabase
+      .from('dead_letter_queue')
+      .insert({
+        original_queue_id: item.id,
+        delivery_id: item.delivery_id,
+        message_type: item.message_type,
+        retry_count: item.retry_count,
+        error_message: errorMessage,
+        original_payload: JSON.stringify(item),
+        failed_at: new Date().toISOString(),
+      });
+  } catch (dlqError) {
+    // If the dead_letter_queue table doesn't exist, log instead of crashing
+    console.error(`[Queue] Dead letter insert failed (table may not exist):`, dlqError.message);
+    console.error(`[Queue] Dead letter payload: delivery=${item.delivery_id}, error=${errorMessage}`);
   }
 }
 
@@ -158,7 +267,7 @@ export async function processQueue() {
 
     for (const item of pending) {
       const provider = item.message_type;
-      
+
       // Check rate limit
       const rateCheck = checkRateLimit(provider);
       if (!rateCheck.allowed) {
@@ -190,7 +299,6 @@ export async function processQueue() {
               break;
             }
             try {
-              // Get template body or use personalized message
               let htmlBody = delivery?.metadata?.personalizedMessage || campaign?.body || '';
               htmlBody = renderTemplate(htmlBody, {
                 name: lead.name || 'there',
@@ -260,7 +368,12 @@ export async function processQueue() {
 
         if (sendResult.success) {
           incrementSendCount(provider);
-          
+
+          // Determine the correct message ID column
+          const messageIdColumn = (provider === 'sms' || provider === 'whatsapp')
+            ? 'sms_message_id'
+            : 'email_message_id';
+
           // Update delivery status
           const messageIdField = provider === 'email' ? 'email_message_id' : 'sms_message_id';
           await supabase
@@ -278,47 +391,79 @@ export async function processQueue() {
             .delete()
             .eq('id', item.id);
 
-          console.log(`[Queue] ✓ Sent ${provider} message (delivery ${item.delivery_id})`);
+          console.log(`[Queue] Sent ${provider} message (delivery ${item.delivery_id})`);
         } else {
-          // Handle failure — retry or mark as failed
+          // Handle failure - retry or mark as permanently failed
           const newRetryCount = item.retry_count + 1;
-          
+
           if (newRetryCount >= item.max_retries) {
-            // Max retries — mark as failed
+            // Max retries reached - mark as permanently failed
             await supabase
               .from('campaign_deliveries')
-              .update({ 
+              .update({
                 status: 'failed',
                 error_message: sendResult.error,
                 updated_at: new Date().toISOString()
               })
               .eq('id', item.delivery_id);
 
+            // Move to dead letter queue for later inspection
+            await moveToDeadLetter(item, sendResult.error);
+
+            // Remove from active queue
             await supabase
               .from('message_queue')
               .delete()
               .eq('id', item.id);
 
-            console.error(`[Queue] ✗ Failed permanently (delivery ${item.delivery_id}): ${sendResult.error}`);
+            console.error(`[Queue] Failed permanently (delivery ${item.delivery_id}): ${sendResult.error}`);
           } else {
             // Exponential backoff: 1min, 4min, 9min
             const backoffMs = Math.pow(newRetryCount, 2) * 60000;
             const nextRetry = new Date(Date.now() + backoffMs).toISOString();
-            
+
             await supabase
               .from('message_queue')
               .update({
                 retry_count: newRetryCount,
                 next_retry_at: nextRetry,
+                last_error: sendResult.error,
                 updated_at: new Date().toISOString()
               })
               .eq('id', item.id);
 
-            console.log(`[Queue] ↻ Retry ${newRetryCount}/${item.max_retries} for delivery ${item.delivery_id} at ${nextRetry}`);
+            console.log(`[Queue] Retry ${newRetryCount}/${item.max_retries} for delivery ${item.delivery_id} at ${nextRetry}`);
           }
         }
       } catch (sendError) {
         console.error(`[Queue] Error processing item ${item.id}:`, sendError);
+
+        // On unexpected errors, still apply retry logic
+        const newRetryCount = (item.retry_count || 0) + 1;
+        if (newRetryCount >= item.max_retries) {
+          await moveToDeadLetter(item, sendError.message);
+          await supabase.from('message_queue').delete().eq('id', item.id);
+          await supabase
+            .from('campaign_deliveries')
+            .update({
+              status: 'failed',
+              error_message: sendError.message,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', item.delivery_id);
+        } else {
+          const backoffMs = Math.pow(newRetryCount, 2) * 60000;
+          const nextRetry = new Date(Date.now() + backoffMs).toISOString();
+          await supabase
+            .from('message_queue')
+            .update({
+              retry_count: newRetryCount,
+              next_retry_at: nextRetry,
+              last_error: sendError.message,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', item.id);
+        }
       }
     }
   } catch (error) {
@@ -336,10 +481,10 @@ export function startQueueProcessor(intervalMs = 30000) {
     console.warn('[Queue] Processor already running');
     return;
   }
-  
+
   console.log(`[Queue] Starting processor (every ${intervalMs / 1000}s)`);
   processorInterval = setInterval(processQueue, intervalMs);
-  
+
   // Run immediately on start
   processQueue();
 }

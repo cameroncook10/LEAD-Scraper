@@ -9,11 +9,15 @@ const faqs = [
   },
   {
     q: "Is the scraping legal and compliant?",
-    a: "Yes. Agent Lead only scrapes publicly available business data from directories, search engines, and social media profiles. We're GDPR and CCPA compliant, and we provide full data processing agreements for enterprise customers.",
+    a: "Agent Lead only scrapes publicly available business data from directories, search engines, and social media profiles. However, you are responsible for ensuring your use of scraped data complies with all applicable laws in your jurisdiction, including GDPR, CCPA, CAN-SPAM, and the terms of service of any platforms you interact with. We provide tools to help with compliance, and enterprise customers can request data processing agreements.",
+  },
+  {
+    q: "How accurate is the scraped data?",
+    a: "All lead data is sourced from publicly available information and is provided on an \"as-is\" basis. While we strive for accuracy, we cannot guarantee that all data (phone numbers, emails, business details) is current or complete. Publicly available data can change at any time. We recommend verifying critical contact information before launching outreach campaigns.",
   },
   {
     q: "How does the Auto DM and Auto Comment feature work?",
-    a: "Our AI generates personalized messages based on each prospect's profile, recent posts, and business needs. Messages are sent at human-like intervals to avoid platform detection. You control templates, timing, and targeting criteria.",
+    a: "Our AI generates personalized messages based on each prospect's profile, recent posts, and business needs. Messages are sent at human-like intervals to avoid platform detection. You control templates, timing, and targeting criteria. You are responsible for ensuring your outreach complies with anti-spam laws and platform terms of service.",
   },
   {
     q: "Can I integrate with my existing CRM?",
@@ -21,15 +25,15 @@ const faqs = [
   },
   {
     q: "How accurate is the AI lead qualification?",
-    a: "Our AI scores leads with 94% accuracy based on engagement signals, business size, online activity, and custom criteria you define. Hot leads are prioritized automatically in your dashboard.",
+    a: "Our AI scoring system analyzes engagement signals, business size, online activity, and custom criteria you define to prioritize leads. Accuracy varies depending on data quality and your specific criteria. We recommend using AI scores as a prioritization tool alongside your own judgment.",
   },
   {
     q: "Can I try Agent Lead before committing?",
-    a: "We offer free trials on a case-by-case basis. Email us to request a free trial and we'll get you set up.",
+    a: "We don't offer a free trial, but you can cancel anytime if it's not the right fit. If you're unhappy within the first 14 days of your initial payment, you can request a refund consideration. Email support@agentlead.io if you have questions before purchasing.",
   },
   {
     q: "What kind of support do you offer?",
-    a: "All plans include email support. Growth and Enterprise plans get priority support with a 15-minute response SLA, plus a dedicated account manager to help optimize your campaigns.",
+    a: "All plans include email support. Growth and Enterprise plans get priority support with faster response times, plus a dedicated account manager to help optimize your campaigns.",
   },
   {
     q: "Can I white-label the dashboard for my clients?",

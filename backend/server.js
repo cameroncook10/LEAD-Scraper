@@ -15,13 +15,17 @@ import socialAuthRoutes from './routes/socialAuth.js';
 import outreachRoutes from './routes/outreach.js';
 import outreachCredentialsRoutes from './routes/outreachCredentials.js';
 import stripeRoutes from './routes/stripe.js';
+import stripeWebhooksRouter from './routes/stripe-webhooks.js';
 import settingsRoutes from './routes/settings.js';
 import campaignsRoutes from './routes/campaigns.js';
 import templatesRoutes from './routes/templates.js';
+import authRoutes from './routes/authRoutes.js';
+import gdprRoutes from './routes/gdpr.js';
 import { initializeDatabase } from './db/schema.js';
 import { startQueueProcessor } from './services/messageQueue.js';
 import { securityHeaders, enforceHttps, sanitizeInput } from './middleware/security.js';
 import { requireAuth } from './middleware/auth.js';
+import { requireSubscription, requirePlan } from './middleware/subscriptionCheck.js';
 import { apiLimiter, scrapeLimiter } from './middleware/rateLimiter.js';
 
 // Load .env from the backend directory (not CWD, which may differ in Electron)
@@ -50,6 +54,10 @@ app.use(cors({
   credentials: true,
   maxAge: 86400
 }));
+
+// Stripe webhook route — MUST come before express.json() so the raw body is preserved
+// for Stripe signature verification.
+app.use('/api/webhooks/stripe', express.raw({ type: 'application/json' }), stripeWebhooksRouter);
 
 // Body parsing
 app.use(express.json({ limit: '10mb' }));
@@ -83,21 +91,23 @@ app.get('/health', (req, res) => {
 // Global rate limiter
 app.use(apiLimiter);
 
-// Routes — protected with auth + rate limiters where appropriate
-app.use('/api/scrape', requireAuth, scrapeLimiter, scrapeRoutes);
-app.use('/api/leads', requireAuth, leadsRoutes);
+// Routes — protected with auth + subscription checks + rate limiters
+app.use('/api/scrape', requireAuth, requirePlan('starter'), scrapeLimiter, scrapeRoutes);
+app.use('/api/leads', requireAuth, requireSubscription, leadsRoutes);
 app.use('/api/jobs', jobsRoutes);
 app.use('/api/industries', industriesRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/webhooks', webhooksRoutes);
 app.use('/api/workflows', requireAuth, workflowRoutes);
 app.use('/api/auth', socialAuthRoutes);
-app.use('/api/outreach', requireAuth, outreachRoutes);
-app.use('/api/outreach-credentials', requireAuth, outreachCredentialsRoutes);
+app.use('/api/outreach', requireAuth, requirePlan('starter'), outreachRoutes);
+app.use('/api/outreach-credentials', requireAuth, requireSubscription, outreachCredentialsRoutes);
 app.use('/api/stripe', stripeRoutes);
 app.use('/api/settings', requireAuth, settingsRoutes);
 app.use('/api/campaigns', campaignsRoutes);
 app.use('/api/templates', templatesRoutes);
+app.use('/auth', authRoutes);
+app.use('/api/gdpr', requireAuth, gdprRoutes);
 
 // 404 handler
 app.use((req, res) => {

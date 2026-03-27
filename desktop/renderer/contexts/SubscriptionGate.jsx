@@ -1,15 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../../frontend/src/lib/supabase';
 import { useAuth } from './ElectronAuthContext';
+
+const MIN_REFRESH_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 
 /**
  * SubscriptionGate - Verifies the user has an active Stripe subscription.
  * No free trial — users must purchase a plan to use the app.
+ * Uses encrypted electron-store via IPC instead of plain localStorage.
  */
 export function SubscriptionGate({ children }) {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
   const [subStatus, setSubStatus] = useState(null); // null = checking, 'active', 'inactive'
   const [checking, setChecking] = useState(false);
+  const lastRefreshRef = useRef(0);
 
   useEffect(() => {
     if (!isAuthenticated || !user?.email) {
@@ -17,22 +21,36 @@ export function SubscriptionGate({ children }) {
       return;
     }
 
-    // Check cache first
-    const cached = localStorage.getItem('sub_cache');
-    if (cached) {
-      try {
-        const parsed = JSON.parse(cached);
-        if (parsed.email === user.email && Date.now() - parsed.ts < 3600000) {
-          setSubStatus(parsed.active ? 'active' : 'inactive');
+    // Check encrypted cache first
+    checkCachedSubscription();
+  }, [isAuthenticated, user?.email]);
+
+  const checkCachedSubscription = async () => {
+    try {
+      const cached = await window.electronAPI?.getSubscriptionCache?.();
+      if (cached) {
+        // Validate email matches current user
+        if (cached.email === user.email && Date.now() - cached.ts < 3600000) {
+          setSubStatus(cached.active ? 'active' : 'inactive');
+          lastRefreshRef.current = cached.ts;
           return;
         }
-      } catch {}
+      }
+    } catch {
+      // Cache read failed, proceed to verify
     }
 
     verifySubscription();
-  }, [isAuthenticated, user?.email]);
+  };
 
   const verifySubscription = async () => {
+    // Enforce minimum refresh interval to prevent spam-clicking
+    const now = Date.now();
+    if (now - lastRefreshRef.current < MIN_REFRESH_INTERVAL_MS && lastRefreshRef.current > 0) {
+      console.log('Subscription refresh throttled — minimum 5 minute interval');
+      return;
+    }
+
     setChecking(true);
     try {
       const { data, error } = await supabase.functions.invoke('verify-subscription', {
@@ -47,12 +65,18 @@ export function SubscriptionGate({ children }) {
 
       const active = data?.active === true;
       setSubStatus(active ? 'active' : 'inactive');
+      lastRefreshRef.current = Date.now();
 
-      localStorage.setItem('sub_cache', JSON.stringify({
-        email: user.email,
-        active,
-        ts: Date.now(),
-      }));
+      // Store in encrypted electron-store via IPC
+      try {
+        await window.electronAPI?.setSubscriptionCache?.({
+          email: user.email,
+          active,
+          ts: Date.now(),
+        });
+      } catch {
+        // Cache write failed — non-critical
+      }
     } catch (err) {
       console.error('Subscription verification error:', err);
       setSubStatus('inactive'); // Fail closed
@@ -147,8 +171,11 @@ export function SubscriptionGate({ children }) {
             Subscribe Now
           </button>
           <button
-            onClick={() => {
-              localStorage.removeItem('sub_cache');
+            onClick={async () => {
+              try {
+                await window.electronAPI?.clearSubscriptionCache?.();
+              } catch {}
+              lastRefreshRef.current = 0; // Allow immediate refresh after manual clear
               setSubStatus(null);
               verifySubscription();
             }}
