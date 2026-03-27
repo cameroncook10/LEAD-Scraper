@@ -3,7 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { createClient } from '@supabase/supabase-js';
 import { fileURLToPath } from 'url';
-import { dirname } from 'path';
+import { dirname, join } from 'path';
 import scrapeRoutes from './routes/scrape.js';
 import leadsRoutes from './routes/leads.js';
 import jobsRoutes from './routes/jobs.js';
@@ -16,20 +16,21 @@ import outreachRoutes from './routes/outreach.js';
 import outreachCredentialsRoutes from './routes/outreachCredentials.js';
 import stripeRoutes from './routes/stripe.js';
 import settingsRoutes from './routes/settings.js';
+import campaignsRoutes from './routes/campaigns.js';
+import templatesRoutes from './routes/templates.js';
 import { initializeDatabase } from './db/schema.js';
 import { startQueueProcessor } from './services/messageQueue.js';
 import { securityHeaders, enforceHttps, sanitizeInput } from './middleware/security.js';
 import { requireAuth } from './middleware/auth.js';
 import { apiLimiter, scrapeLimiter } from './middleware/rateLimiter.js';
 
-// Load .env - must assign to process.env for ES modules
-const envConfig = dotenv.config();
+// Load .env from the backend directory (not CWD, which may differ in Electron)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const envConfig = dotenv.config({ path: join(__dirname, '.env') });
 if (envConfig.parsed) {
   Object.assign(process.env, envConfig.parsed);
 }
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3002;
@@ -95,6 +96,8 @@ app.use('/api/outreach', requireAuth, outreachRoutes);
 app.use('/api/outreach-credentials', requireAuth, outreachCredentialsRoutes);
 app.use('/api/stripe', stripeRoutes);
 app.use('/api/settings', requireAuth, settingsRoutes);
+app.use('/api/campaigns', campaignsRoutes);
+app.use('/api/templates', templatesRoutes);
 
 // 404 handler
 app.use((req, res) => {
