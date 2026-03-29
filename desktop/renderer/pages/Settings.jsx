@@ -170,7 +170,7 @@ function AccountTab() {
 
   const openBillingPortal = async () => {
     try {
-      const res = await fetch(`${BACKEND_URL}/api/billing-portal`, {
+      const res = await fetch(`${BACKEND_URL}/api/settings/billing-portal`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: user?.email }),
