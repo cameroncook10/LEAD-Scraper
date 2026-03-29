@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Check, Sparkles, Loader2 } from "lucide-react";
-import { createStripeCheckout } from "../../services/api";
+
 
 const plans = [
   {
@@ -139,6 +139,15 @@ export function PricingSection() {
           </h2>
           <p className="text-gray-500 text-lg max-w-2xl mx-auto font-light">
             Choose the plan that fits your business. Cancel anytime.
+          </p>
+          <p className="text-gray-600 text-sm mt-3">
+            Want to try before you buy?{' '}
+            <a
+              href="mailto:support@agentlead.io?subject=Free%20Trial%20Request&body=Hi%20AgentLead%20team%2C%0A%0AI'd%20like%20to%20request%20a%20free%20trial.%0A%0ABusiness%20name%3A%20%0AUse%20case%3A%20%0A%0AThanks!"
+              className="text-cyan-400 hover:underline"
+            >
+              Email us for a free trial
+            </a>
           </p>
         </motion.div>
 

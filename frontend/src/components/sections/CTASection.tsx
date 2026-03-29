@@ -60,7 +60,13 @@ export function CTASection() {
             </div>
 
             <p className="mt-6 text-xs text-gray-600">
-              Cancel anytime • Instant access after purchase
+              Cancel anytime • Instant access after purchase •{' '}
+              <a
+                href="mailto:support@agentlead.io?subject=Free%20Trial%20Request"
+                className="text-cyan-500 hover:underline"
+              >
+                Request a free trial
+              </a>
             </p>
           </div>
         </motion.div>

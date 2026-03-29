@@ -23,5 +23,45 @@
     "electron-builder": "^25.1.0",
     "concurrently": "^9.1.0",
     "wait-on": "^8.0.0"
+  },
+  "build": {
+    "appId": "io.agentlead.desktop",
+    "productName": "AgentLead",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer/dist/**/*",
+      "node_modules/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "../backend",
+        "to": "backend",
+        "filter": ["**/*", "!node_modules", "!.env"]
+      }
+    ],
+    "win": {
+      "target": ["nsis"],
+      "icon": "../frontend/public/logo.png"
+    },
+    "mac": {
+      "target": ["dmg"],
+      "icon": "../frontend/public/logo.png",
+      "category": "public.app-category.business"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "cameroncook10",
+      "repo": "LEAD-Scraper"
+    }
   }
 }

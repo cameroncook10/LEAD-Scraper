@@ -7,19 +7,22 @@ export default function CheckoutSuccess() {
   const [searchParams] = useSearchParams();
   const [countdown, setCountdown] = useState(5);
 
+  const sessionId = searchParams.get('session_id');
+
   useEffect(() => {
+    const downloadUrl = sessionId ? `/download?session_id=${sessionId}` : '/download';
     const timer = setInterval(() => {
       setCountdown((c) => {
         if (c <= 1) {
           clearInterval(timer);
-          navigate('/download');
+          navigate(downloadUrl);
           return 0;
         }
         return c - 1;
       });
     }, 1000);
     return () => clearInterval(timer);
-  }, [navigate]);
+  }, [navigate, sessionId]);
 
   return (
     <div className="min-h-screen bg-[#050505] flex items-center justify-center px-6">
@@ -39,7 +42,7 @@ export default function CheckoutSuccess() {
         </p>
 
         <button
-          onClick={() => navigate('/download')}
+          onClick={() => navigate(sessionId ? `/download?session_id=${sessionId}` : '/download')}
           className="btn-primary px-8 py-3 text-base rounded-xl w-full"
         >
           Download Now
