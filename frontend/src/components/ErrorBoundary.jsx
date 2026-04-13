@@ -1,4 +1,5 @@
 import React from 'react';
+import { captureException } from '../lib/sentry';
 
 export default class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -11,7 +12,7 @@ export default class ErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error, errorInfo) {
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
+    captureException(error, { extra: errorInfo });
   }
 
   handleRetry = () => {
@@ -22,7 +23,6 @@ export default class ErrorBoundary extends React.Component {
     if (this.state.hasError) {
       return (
         <div className="min-h-screen bg-[#050505] flex flex-col items-center justify-center px-6 text-center">
-          {/* Glow effect */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-red-500/5 rounded-full blur-[120px] pointer-events-none" />
 
           <div className="relative z-10 max-w-md">
@@ -36,7 +36,8 @@ export default class ErrorBoundary extends React.Component {
               Something Went Wrong
             </h1>
             <p className="text-gray-400 mb-8 leading-relaxed">
-              An unexpected error occurred. Please try again, or contact support if the problem persists.
+              An unexpected error occurred. Our team has been notified. Please try again,
+              or contact support if the problem persists.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">

@@ -1,13 +1,38 @@
-node_modules
+# ── Dependencies ──────────────────────────────────────────────
+node_modules/
+**/node_modules/
+
+# ── Environment secrets ────────────────────────────────────────
+# .env.example files ARE committed (they are safe templates)
 .env
 .env.local
 .env.production
-frontend/dist
+.env.staging
+backend/.env
 frontend/.env.local
+
+# ── Build outputs ──────────────────────────────────────────────
+frontend/dist/
+dist/
+
+# ── Logs ──────────────────────────────────────────────────────
+*.log
+logs/
+frontend_error.log
+
+# ── Archives (desktop / mobile built artifacts) ───────────────
+archive/desktop/dist/
+archive/desktop/renderer/dist/
+archive/desktop/renderer/node_modules/
+
+# ── Mobile ────────────────────────────────────────────────────
+mobile/.expo/
+mobile/ios/
+mobile/android/
+
+# ── Deployment tooling ────────────────────────────────────────
 .vercel
 
-# Desktop (Electron)
-desktop/dist/
-desktop/node_modules/
-desktop/renderer/dist/
-desktop/renderer/node_modules/
+# ── OS junk ───────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
