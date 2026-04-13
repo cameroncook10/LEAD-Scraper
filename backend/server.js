@@ -29,7 +29,6 @@ import { requireAuth } from './middleware/auth.js';
 import { requireSubscription, requirePlan } from './middleware/subscriptionCheck.js';
 import { apiLimiter, scrapeLimiter } from './middleware/rateLimiter.js';
 import logger from './utils/logger.js';
-import { initSentry, sentryRequestHandler, sentryErrorHandler } from './utils/sentry.js';
 
 // ── Environment ────────────────────────────────────────────────────────────────
 const __filename = fileURLToPath(import.meta.url);
@@ -39,14 +38,8 @@ dotenv.config({ path: join(__dirname, '.env') });
 const PORT    = parseInt(process.env.PORT || '3002', 10);
 const isProd  = process.env.NODE_ENV === 'production';
 
-// Initialise Sentry before anything else (no-op if SENTRY_DSN not set)
-await initSentry();
-
 // ── Express app ────────────────────────────────────────────────────────────────
 const app = express();
-
-// Sentry request handler must be the first middleware
-app.use(sentryRequestHandler());
 
 // Security middleware
 app.use(securityHeaders);
@@ -151,9 +144,6 @@ app.use('/api/gdpr',                 requireAuth, gdprRoutes);
 app.use((req, res) => {
   res.status(404).json({ error: 'Route not found', path: req.originalUrl });
 });
-
-// ── Sentry error handler (must come before the final error handler) ────────────
-app.use(sentryErrorHandler());
 
 // ── Global error handler ───────────────────────────────────────────────────────
 app.use((err, req, res, _next) => {

@@ -9,11 +9,7 @@ import RefundPolicy from './pages/RefundPolicy'
 import NotFound from './pages/NotFound'
 import ErrorBoundary from './components/ErrorBoundary'
 import CookieConsent from './components/CookieConsent'
-import { initSentry } from './lib/sentry'
 import './index.css'
-
-// Initialise Sentry before mounting (no-op if VITE_SENTRY_DSN is not set)
-initSentry()
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
