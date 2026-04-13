@@ -2,29 +2,12 @@
   "version": 2,
   "buildCommand": "cd frontend && npm install && npm run build",
   "outputDirectory": "frontend/dist",
-  "installCommand": "npm install && cd backend && npm install && cd ../frontend && npm install",
+  "installCommand": "cd frontend && npm install",
   "framework": null,
   "rewrites": [
     {
-      "source": "/api/(.*)",
-      "destination": "/api"
-    },
-    {
-      "source": "/health",
-      "destination": "/api"
-    },
-    {
-      "source": "/((?!api|assets|favicon|_vercel).*)",
+      "source": "/((?!assets|favicon|logo|vite\\.svg|_vercel).*)",
       "destination": "/index.html"
     }
-  ],
-  "functions": {
-    "api/index.js": {
-      "maxDuration": 30,
-      "memory": 1024
-    }
-  },
-  "env": {
-    "VERCEL": "1"
-  }
+  ]
 }
