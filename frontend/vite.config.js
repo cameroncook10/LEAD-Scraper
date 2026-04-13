@@ -51,10 +51,9 @@ export default defineConfig(({ mode }) => {
         output: {
           manualChunks: {
             // Separate large vendor libs into their own cached chunks
-            'vendor-react':   ['react', 'react-dom', 'react-router-dom'],
-            'vendor-framer':  ['framer-motion'],
+            'vendor-react':    ['react', 'react-dom', 'react-router-dom'],
+            'vendor-framer':   ['framer-motion'],
             'vendor-supabase': ['@supabase/supabase-js'],
-            'vendor-stripe':  ['@stripe/stripe-js'],
           },
         },
       },
