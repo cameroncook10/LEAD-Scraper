@@ -1,58 +1,28 @@
 /**
- * Sentry wrapper — only activates when VITE_SENTRY_DSN is set AND
- * @sentry/react is installed.
+ * Sentry stub — no dynamic imports, guaranteed build-safe.
  *
- * To enable full Sentry support:
- *   cd frontend && npm install @sentry/react
- *   Set VITE_SENTRY_DSN in your environment.
+ * To enable full Sentry error tracking:
+ *   1. cd frontend && npm install @sentry/react
+ *   2. Set VITE_SENTRY_DSN in your environment / Vercel project settings
+ *   3. Replace this file with the real initialisation below:
  *
- * All exports are safe no-ops until then.
+ *   import * as Sentry from '@sentry/react';
+ *   export function initSentry() {
+ *     const dsn = import.meta.env.VITE_SENTRY_DSN;
+ *     if (!dsn) return;
+ *     Sentry.init({ dsn, tracesSampleRate: 0.2, ... });
+ *   }
+ *   export const captureException = Sentry.captureException;
+ *   export const setUser = (u) => Sentry.setUser(u ? { id: u.id, email: u.email } : null);
+ *   export const clearUser = () => Sentry.setUser(null);
  */
 
-let Sentry = null;
-
-export async function initSentry() {
-  const dsn = import.meta.env.VITE_SENTRY_DSN;
-  if (!dsn) return;
-
-  try {
-    // vite-ignore: @sentry/react is an optional peer dependency.
-    // Install it to activate error tracking; the app works without it.
-    const mod = await import(/* @vite-ignore */ '@sentry/react');
-    Sentry = mod;
-
-    Sentry.init({
-      dsn,
-      environment:             import.meta.env.MODE,
-      release:                 import.meta.env.VITE_APP_VERSION || 'unknown',
-      tracesSampleRate:        import.meta.env.MODE === 'production' ? 0.2 : 1.0,
-      replaysSessionSampleRate: 0.05,
-      replaysOnErrorSampleRate: 1.0,
-      integrations: (integrations) => [
-        ...integrations,
-        Sentry.browserTracingIntegration(),
-        Sentry.replayIntegration(),
-      ],
-    });
-  } catch {
-    // Package not installed or failed to load — silently degrade
-  }
-}
+export function initSentry() {}
 
 export function captureException(error, context) {
-  if (Sentry) {
-    Sentry.captureException(error, context);
-  } else {
-    console.error('[Error]', error, context);
-  }
+  console.error('[Error]', error, context);
 }
 
-export function setUser(user) {
-  if (Sentry && user) {
-    Sentry.setUser({ id: user.id, email: user.email });
-  }
-}
+export function setUser(_user) {}
 
-export function clearUser() {
-  if (Sentry) Sentry.setUser(null);
-}
+export function clearUser() {}
