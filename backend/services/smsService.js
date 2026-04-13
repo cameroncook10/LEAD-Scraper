@@ -2,17 +2,23 @@ import twilio from 'twilio';
 
 /**
  * SMS and WhatsApp Service
- * Uses Twilio for SMS and WhatsApp delivery
+ * Uses Twilio for SMS and WhatsApp delivery.
+ * Client is initialised lazily so the server starts even without Twilio credentials.
  */
 
-const client = new twilio(
-  process.env.TWILIO_ACCOUNT_SID,
-  process.env.TWILIO_AUTH_TOKEN
-);
+let _client = null;
 
-const accountSid = process.env.TWILIO_ACCOUNT_SID;
-const fromNumber = process.env.TWILIO_PHONE_NUMBER;
-const whatsappNumber = `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER || fromNumber}`;
+function getClient() {
+  if (_client) return _client;
+  const sid   = process.env.TWILIO_ACCOUNT_SID;
+  const token = process.env.TWILIO_AUTH_TOKEN;
+  if (!sid || !token) throw new Error('Twilio credentials not configured (TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN)');
+  _client = new twilio(sid, token);
+  return _client;
+}
+
+const fromNumber     = () => process.env.TWILIO_PHONE_NUMBER;
+const whatsappNumber = () => `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER || process.env.TWILIO_PHONE_NUMBER}`;
 
 /**
  * Send SMS message
@@ -31,9 +37,9 @@ export const smsService = {
     }
 
     try {
-      const message = await client.messages.create({
+      const message = await getClient().messages.create({
         body: body.substring(0, 160), // SMS limit
-        from: fromNumber,
+        from: fromNumber(),
         to: this.normalizePhoneNumber(to),
         statusCallback: `${process.env.BACKEND_URL}/api/webhooks/sms-status?tracking_id=${trackingId}`
       });
@@ -65,8 +71,8 @@ export const smsService = {
     }
 
     try {
-      const message = await client.messages.create({
-        from: whatsappNumber,
+      const message = await getClient().messages.create({
+        from: whatsappNumber(),
         body,
         to: `whatsapp:${this.normalizePhoneNumber(to)}`,
         statusCallback: `${process.env.BACKEND_URL}/api/webhooks/whatsapp-status?tracking_id=${trackingId}`
@@ -88,7 +94,7 @@ export const smsService = {
 
   async getMessageStatus(messageSid) {
     try {
-      const message = await client.messages(messageSid).fetch();
+      const message = await getClient().messages(messageSid).fetch();
       return {
         sid: message.sid,
         status: message.status,
