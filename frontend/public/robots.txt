@@ -1,0 +1,7 @@
+User-agent: *
+Disallow: /dashboard
+Disallow: /checkout-success
+Disallow: /api/
+Allow: /
+
+Sitemap: https://agentlead.co/sitemap.xml

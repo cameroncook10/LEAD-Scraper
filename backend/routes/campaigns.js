@@ -307,6 +307,19 @@ router.delete('/:id', async (req, res) => {
 router.get('/:id/stats', async (req, res) => {
   try {
     const campaignId = req.params.id;
+    const userId = req.user.userId;
+
+    // Verify campaign belongs to the authenticated user
+    const { data: campaign, error: campaignErr } = await supabase
+      .from('campaigns')
+      .select('id')
+      .eq('id', campaignId)
+      .eq('user_id', userId)
+      .single();
+
+    if (campaignErr || !campaign) {
+      return res.status(404).json({ error: 'Campaign not found' });
+    }
 
     // Get deliveries
     const { data: deliveries } = await supabase

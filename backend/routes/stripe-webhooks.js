@@ -323,15 +323,18 @@ async function upsertSubscription(supabaseAdmin, userId, customerId, subscriptio
  */
 async function resolveUserId(supabaseAdmin, email) {
   if (!email) return null;
-  const { data, error } = await supabaseAdmin.auth.admin.listUsers();
-  if (error) {
-    console.error('[resolveUserId] listUsers error:', error);
-    return null;
+  // Use targeted lookup instead of fetching all users
+  const { data, error } = await supabaseAdmin.auth.admin.listUsers({ filter: `email.eq.${email.toLowerCase()}` });
+  if (error || !data?.users?.length) {
+    // Fallback: try exact match via getUserByEmail if available
+    const { data: userData, error: ue } = await supabaseAdmin.auth.admin.getUserByEmail(email);
+    if (ue || !userData?.user) {
+      console.error('[resolveUserId] no user found for email:', email);
+      return null;
+    }
+    return userData.user.id;
   }
-  const user = data.users.find(
-    (u) => u.email?.toLowerCase() === email.toLowerCase()
-  );
-  return user?.id || null;
+  return data.users[0].id;
 }
 
 /**

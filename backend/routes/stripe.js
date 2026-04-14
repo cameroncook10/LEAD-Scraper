@@ -7,18 +7,22 @@
 
 import express from 'express';
 import { createCheckoutSession, createPortalSession, PLANS } from '../services/stripe.js';
+import { requireAuth } from '../middleware/auth.js';
 
 const router = express.Router();
 
 // Create Checkout Session with 3-day free trial
-router.post('/create-checkout', async (req, res) => {
+router.post('/create-checkout', requireAuth, async (req, res) => {
   try {
-    const { plan, email, isAnnual } = req.body;
+    const { plan, isAnnual } = req.body;
     if (!plan) return res.status(400).json({ error: 'plan is required (starter or growth)' });
-    
+
+    // Always use the authenticated user's email — never trust client-supplied email
+    const email = req.user.email;
+
     // Build the plan key (e.g., "starter" or "starter_annual")
     const planKey = isAnnual ? `${plan}_annual` : plan;
-    
+
     const session = await createCheckoutSession(planKey, email);
     res.json(session);
   } catch (err) {

@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { supabase } from '../lib/supabase.js';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
@@ -7,6 +8,15 @@ export const api = axios.create({
   headers: {
     'Content-Type': 'application/json'
   }
+});
+
+// Attach Supabase JWT to every request automatically
+api.interceptors.request.use(async (config) => {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session?.access_token) {
+    config.headers.Authorization = `Bearer ${session.access_token}`;
+  }
+  return config;
 });
 
 // Error interceptor for better debugging
@@ -87,8 +97,8 @@ export const loadOutreachCredentials = async (userId = 'default') => {
 };
 
 // Stripe checkout endpoints
-export const createStripeCheckout = async (plan, isAnnual = false, email = '') => {
-  const response = await api.post('/stripe/create-checkout', { plan, isAnnual, email });
+export const createStripeCheckout = async (plan, isAnnual = false) => {
+  const response = await api.post('/stripe/create-checkout', { plan, isAnnual });
   return response.data;
 };
 
