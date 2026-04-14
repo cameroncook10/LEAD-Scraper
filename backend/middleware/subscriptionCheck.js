@@ -14,6 +14,17 @@
 import { supabase } from '../server.js';
 
 // ---------------------------------------------------------------------------
+// Admin bypass — comma-separated emails in ADMIN_EMAILS env var get full access
+// ---------------------------------------------------------------------------
+const ADMIN_EMAILS = new Set(
+  (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean)
+);
+
+function isAdmin(req) {
+  return req.user?.email && ADMIN_EMAILS.has(req.user.email.toLowerCase());
+}
+
+// ---------------------------------------------------------------------------
 // Plan limits (per billing period / month)
 // ---------------------------------------------------------------------------
 const PLAN_LIMITS = {
@@ -88,6 +99,8 @@ async function getCurrentUsage(userId, periodStart, periodEnd) {
 export const requireSubscription = async (req, res, next) => {
   // Skip when Supabase is not configured (local/Electron dev mode)
   if (!supabase) return next();
+  // Admin bypass
+  if (isAdmin(req)) return next();
 
   const userId = req.user?.userId;
   if (!userId) {
@@ -122,6 +135,8 @@ export function requirePlan(minimumPlan) {
   return async (req, res, next) => {
     // Skip when Supabase is not configured (local/Electron dev mode)
     if (!supabase) return next();
+    // Admin bypass
+    if (isAdmin(req)) return next();
 
     const userId = req.user?.userId;
     if (!userId) {

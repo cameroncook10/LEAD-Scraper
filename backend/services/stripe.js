@@ -1,68 +1,111 @@
 /**
- * Stripe Service — Proxied through Supabase Edge Function
- * 
- * The STRIPE_SECRET_KEY is stored as a Supabase secret and accessed
- * only by the `stripe-checkout` edge function. This backend service
- * proxies checkout requests through that function.
- * 
- * Setup:
- *   supabase secrets set STRIPE_SECRET_KEY=sk_test_...
- *   supabase functions deploy stripe-checkout
+ * Stripe Service — calls Stripe API directly using STRIPE_SECRET_KEY
+ *
+ * Plans and pricing are defined here server-side only.
+ * The frontend never sees the secret key.
  */
 
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
+import Stripe from 'stripe';
+
+function getStripe() {
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) throw new Error('STRIPE_SECRET_KEY is not set');
+  return new Stripe(key, { apiVersion: '2023-10-16' });
+}
+
+const FRONTEND_URL = process.env.FRONTEND_URL || 'https://agentlead.co';
+
+const PLANS = {
+  starter: {
+    name: 'Agent Lead Starter',
+    amount: 49700,   // $497/mo in cents
+    description: '5,000 leads/mo, 500 DMs, AI qualification, basic analytics',
+    interval: 'month',
+  },
+  growth: {
+    name: 'Agent Lead Growth',
+    amount: 200000,  // $2,000/mo in cents
+    description: 'Unlimited leads, unlimited DMs, CRM sync, priority support',
+    interval: 'month',
+  },
+  starter_annual: {
+    name: 'Agent Lead Starter (Annual)',
+    amount: 476400,  // $397/mo × 12 billed annually
+    description: '5,000 leads/mo, 500 DMs, AI qualification, basic analytics — annual billing',
+    interval: 'year',
+  },
+  growth_annual: {
+    name: 'Agent Lead Growth (Annual)',
+    amount: 1920000, // $1,600/mo × 12 billed annually
+    description: 'Unlimited leads, unlimited DMs, CRM sync, priority support — annual billing',
+    interval: 'year',
+  },
+};
 
 /**
- * Create a Stripe Checkout Session via Supabase Edge Function.
- * Includes 3-day free trial — card collected upfront but not charged until trial ends.
+ * Create a Stripe Checkout Session with a 3-day free trial.
  */
-export async function createCheckoutSession(plan, email, successUrl, cancelUrl) {
-  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-    throw new Error('SUPABASE_URL and SUPABASE_ANON_KEY must be set in .env');
+export async function createCheckoutSession(planKey, email) {
+  const plan = PLANS[planKey];
+  if (!plan) {
+    throw new Error(`Invalid plan "${planKey}". Valid options: ${Object.keys(PLANS).join(', ')}`);
   }
 
-  const res = await fetch(`${SUPABASE_URL}/functions/v1/stripe-checkout`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+  const stripe = getStripe();
+
+  const session = await stripe.checkout.sessions.create({
+    mode: 'subscription',
+    payment_method_types: ['card'],
+    customer_email: email || undefined,
+    line_items: [{
+      price_data: {
+        currency: 'usd',
+        product_data: {
+          name: plan.name,
+          description: plan.description,
+        },
+        recurring: { interval: plan.interval },
+        unit_amount: plan.amount,
+      },
+      quantity: 1,
+    }],
+    subscription_data: {
+      trial_period_days: 3,
+      metadata: { plan: planKey },
     },
-    body: JSON.stringify({ plan, email, successUrl, cancelUrl }),
+    metadata: { plan: planKey },
+    payment_method_collection: 'always',
+    success_url: `${FRONTEND_URL}/checkout-success?session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${FRONTEND_URL}/#pricing`,
   });
 
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Stripe checkout edge function failed');
-  return data;
+  return { sessionId: session.id, url: session.url };
 }
 
 /**
- * Create a Stripe Customer Portal Session for managing subscriptions.
+ * Create a Stripe Customer Portal Session.
  */
-export async function createPortalSession(sessionId, returnUrl) {
-  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-    throw new Error('SUPABASE_URL and SUPABASE_ANON_KEY must be set in .env');
+export async function createPortalSession(checkoutSessionId, returnUrl) {
+  const stripe = getStripe();
+
+  // Resolve the customer from the original checkout session
+  const checkoutSession = await stripe.checkout.sessions.retrieve(checkoutSessionId);
+  if (!checkoutSession.customer) {
+    throw new Error('No customer found for this session');
   }
 
-  const res = await fetch(`${SUPABASE_URL}/functions/v1/stripe-checkout`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-    },
-    body: JSON.stringify({ action: 'create-portal-session', sessionId, returnUrl }),
+  const portal = await stripe.billingPortal.sessions.create({
+    customer: checkoutSession.customer,
+    return_url: returnUrl || `${FRONTEND_URL}/dashboard`,
   });
 
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Stripe portal edge function failed');
-  return data;
+  return { url: portal.url };
 }
 
 /**
- * Pricing plan metadata (for display purposes only — 
- * actual pricing is enforced in the edge function).
+ * Pricing plan metadata exposed to the frontend (no secret data).
  */
-export const PLANS = {
+export const PLAN_DISPLAY = {
   starter: {
     name: 'Starter',
     monthlyPrice: '$497',
@@ -76,3 +119,5 @@ export const PLANS = {
     features: ['Unlimited leads', 'Unlimited DMs', 'CRM sync', 'Priority support'],
   },
 };
+
+export { PLAN_DISPLAY as PLANS };
