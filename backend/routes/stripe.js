@@ -32,7 +32,7 @@ router.post('/create-checkout', requireAuth, async (req, res) => {
 });
 
 // Create Customer Portal Session (for managing subscription)
-router.post('/create-portal', async (req, res) => {
+router.post('/create-portal', requireAuth, async (req, res) => {
   try {
     const { sessionId } = req.body;
     if (!sessionId) return res.status(400).json({ error: 'sessionId is required' });
