@@ -3,20 +3,34 @@ import { Navigate, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { Loader2 } from 'lucide-react';
 
+// Dev-mode bypass — when Supabase is not configured, skip auth entirely
+// so the full app (dashboard, leads, scrapers, etc.) is usable locally.
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+const IS_DEV_MODE = !supabaseUrl || supabaseUrl.includes('placeholder') || supabaseUrl.includes('YOUR_PROJECT');
+
+const DEV_USER = {
+  id: 'dev-local-user',
+  email: 'dev@localhost',
+  user_metadata: { full_name: 'Local Developer' },
+};
+
 /**
  * ProtectedRoute - Wraps dashboard and authenticated pages
  * 
- * - Checks if user is authenticated via Supabase
+ * - In dev mode (no Supabase), allows access with a mock user
+ * - In production, checks Supabase auth
  * - Shows loading state while checking
  * - Redirects to login if not authenticated
- * - Passes auth session to wrapped component via context
  */
 export function ProtectedRoute({ children }) {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(IS_DEV_MODE ? DEV_USER : null);
+  const [loading, setLoading] = useState(!IS_DEV_MODE);
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Skip auth checks in dev mode
+    if (IS_DEV_MODE) return;
+
     checkAuth();
     
     // Subscribe to auth changes
@@ -69,34 +83,10 @@ export function ProtectedRoute({ children }) {
 
   if (!user) {
     console.log('Not authenticated, redirecting to login');
-    return <Navigate to="/" replace />;
+    return <Navigate to="/login" replace />;
   }
 
   return children;
 }
 
-/**
- * AuthContext - Provides user info to dashboard
- */
-export function useAuth() {
-  const [user, setUser] = React.useState(null);
-  const [session, setSession] = React.useState(null);
-
-  React.useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user || null);
-    });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user || null);
-    });
-
-    return () => subscription?.unsubscribe();
-  }, []);
-
-  return { user, session };
-}
+// useAuth is exported from AuthContext.jsx — import from there instead of here.

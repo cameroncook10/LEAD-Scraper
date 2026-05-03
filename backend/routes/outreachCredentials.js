@@ -39,13 +39,13 @@ function decryptSensitiveFields(record) {
 
 /**
  * Save outreach credentials for a user.
- * In production, add auth middleware to get user ID from JWT.
- * For now, uses a default user ID.
+ * Uses the authenticated user's ID from req.user (set by requireAuth middleware).
  */
 router.post('/', async (req, res) => {
   try {
     const supabase = req.app.locals.supabase;
-    const userId = req.body.userId || 'default';
+    // Use the authenticated user's ID — never trust client-supplied userId
+    const userId = req.user?.userId || 'default';
     const { instagram, facebook, email } = req.body;
 
     const record = {
@@ -83,7 +83,8 @@ router.post('/', async (req, res) => {
 router.get('/', async (req, res) => {
   try {
     const supabase = req.app.locals.supabase;
-    const userId = req.query.userId || 'default';
+    // Use the authenticated user's ID — never trust client-supplied userId
+    const userId = req.user?.userId || 'default';
 
     const { data, error } = await supabase
       .from('outreach_credentials')

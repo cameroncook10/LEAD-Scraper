@@ -4,7 +4,9 @@ export const auditLog = async (userId, action, resourceType = null, resourceId =
   try {
     console.log(`[AUDIT] user=${userId} action=${action} resource=${resourceType}/${resourceId}`, JSON.stringify(details));
 
-    // Persist to audit_logs table if it exists
+    // Persist to audit_logs table if it exists (skip when Supabase not configured)
+    if (!supabase) return;
+
     await supabase
       .from('audit_logs')
       .insert({

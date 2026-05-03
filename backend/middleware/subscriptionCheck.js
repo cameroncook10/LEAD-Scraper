@@ -14,6 +14,11 @@
 import { supabase } from '../server.js';
 
 // ---------------------------------------------------------------------------
+// Dev-mode bypass — skip all subscription checks when Stripe is not configured
+// ---------------------------------------------------------------------------
+const STRIPE_CONFIGURED = !!process.env.STRIPE_SECRET_KEY;
+
+// ---------------------------------------------------------------------------
 // Admin bypass — comma-separated emails in ADMIN_EMAILS env var get full access
 // ---------------------------------------------------------------------------
 const ADMIN_EMAILS = new Set(
@@ -99,6 +104,8 @@ async function getCurrentUsage(userId, periodStart, periodEnd) {
 export const requireSubscription = async (req, res, next) => {
   // Skip when Supabase is not configured (local/Electron dev mode)
   if (!supabase) return next();
+  // Skip when Stripe is not configured (dev mode — no paywall)
+  if (!STRIPE_CONFIGURED) return next();
   // Admin bypass
   if (isAdmin(req)) return next();
 
@@ -135,6 +142,8 @@ export function requirePlan(minimumPlan) {
   return async (req, res, next) => {
     // Skip when Supabase is not configured (local/Electron dev mode)
     if (!supabase) return next();
+    // Skip when Stripe is not configured (dev mode — no paywall)
+    if (!STRIPE_CONFIGURED) return next();
     // Admin bypass
     if (isAdmin(req)) return next();
 

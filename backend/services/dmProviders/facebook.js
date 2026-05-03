@@ -1,5 +1,8 @@
 /**
  * Facebook Messenger Provider — Per-User Token Version
+ *
+ * Pulls the user's Facebook page token from the `outreach_credentials`
+ * table (the same table used by the rest of the app).
  */
 import { supabase } from '../../server.js';
 
@@ -7,24 +10,22 @@ const FB_API_BASE = 'https://graph.facebook.com/v21.0';
 
 async function getUserFacebookCreds(userId) {
   const { data, error } = await supabase
-    .from('api_keys')
-    .select('encrypted_key, metadata')
+    .from('outreach_credentials')
+    .select('fb_page_token, fb_page_id')
     .eq('user_id', userId)
-    .eq('provider', 'facebook')
     .single();
 
   if (error || !data) return null;
 
   return {
-    pageAccessToken: data.encrypted_key,
-    pageId: data.metadata?.page_id,
-    expiresAt: data.metadata?.expires_at,
+    pageAccessToken: data.fb_page_token || null,
+    pageId: data.fb_page_id || null,
   };
 }
 
 export async function sendFacebookMessage(delivery, userId) {
   let pageAccessToken, pageId;
-  
+
   if (userId) {
     const creds = await getUserFacebookCreds(userId);
     if (creds) {
@@ -32,27 +33,27 @@ export async function sendFacebookMessage(delivery, userId) {
       pageId = creds.pageId;
     }
   }
-  
+
   pageAccessToken = pageAccessToken || process.env.FACEBOOK_PAGE_ACCESS_TOKEN;
   pageId = pageId || process.env.FACEBOOK_PAGE_ID;
 
   if (!pageAccessToken || !pageId) {
-    return { 
-      success: false, 
-      error: 'Facebook not connected. Please connect your Facebook Page in Settings.' 
+    return {
+      success: false,
+      error: 'Facebook not connected. Please connect your Facebook Page in Settings.',
     };
   }
 
   try {
     const lead = delivery?.leads;
     const fbPsid = lead?.raw_data?.facebook_psid;
-    
+
     if (!fbPsid) {
       return { success: false, error: 'Lead has no Facebook PSID' };
     }
 
     let messageText = delivery?.metadata?.personalizedMessage || '';
-    
+
     messageText = messageText
       .replace(/{{name}}/g, lead.name || 'there')
       .replace(/{{business}}/g, lead.name || 'your business')

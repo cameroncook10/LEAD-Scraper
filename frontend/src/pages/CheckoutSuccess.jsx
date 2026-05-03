@@ -12,7 +12,7 @@ export default function CheckoutSuccess() {
       setCountdown((c) => {
         if (c <= 1) {
           clearInterval(timer);
-          navigate('/download');
+          navigate('/dashboard');
           return 0;
         }
         return c - 1;
@@ -39,10 +39,10 @@ export default function CheckoutSuccess() {
         </p>
 
         <button
-          onClick={() => navigate('/download')}
+          onClick={() => navigate('/dashboard')}
           className="btn-primary px-8 py-3 text-base rounded-xl w-full"
         >
-          Download Now
+          Go to Dashboard
         </button>
       </div>
     </div>

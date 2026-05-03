@@ -1,16 +1,23 @@
-import { createClient } from '@supabase/supabase-js';
+// Use the shared Supabase client from server.js to avoid creating a second
+// instance and to honour the null-when-not-configured pattern.
+import { supabase as _supabase } from '../server.js';
 
-let _supabase;
 function getSupabase() {
-  if (!_supabase) {
-    _supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
-  }
   return _supabase;
 }
 
 export const qualifyLead = async (leadData) => {
+  const sb = getSupabase();
+  if (!sb) {
+    return {
+      ai_score: 0,
+      ai_category: 'unconfigured',
+      ai_confidence: 0,
+      reasoning: 'Supabase not configured',
+    };
+  }
   try {
-    const { data, error } = await getSupabase().functions.invoke('ai-qualify', {
+    const { data, error } = await sb.functions.invoke('ai-qualify', {
       body: leadData
     });
 

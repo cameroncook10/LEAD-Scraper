@@ -6,8 +6,10 @@ const router = express.Router();
 router.get('/', async (req, res, next) => {
   try {
     const { status, limit = 50 } = req.query;
+    const supabase = req.app.locals.supabase;
+    if (!supabase) return res.status(503).json({ error: 'Database not configured' });
 
-    let query = req.app.locals.supabase
+    let query = supabase
       .from('scrape_jobs')
       .select('*');
 
@@ -34,8 +36,10 @@ router.get('/', async (req, res, next) => {
 router.get('/:jobId', async (req, res, next) => {
   try {
     const { jobId } = req.params;
+    const supabase = req.app.locals.supabase;
+    if (!supabase) return res.status(503).json({ error: 'Database not configured' });
 
-    const { data: job, error: jobError } = await req.app.locals.supabase
+    const { data: job, error: jobError } = await supabase
       .from('scrape_jobs')
       .select('*')
       .eq('id', jobId)
@@ -47,7 +51,7 @@ router.get('/:jobId', async (req, res, next) => {
     }
 
     // Get job logs
-    const { data: logs, error: logsError } = await req.app.locals.supabase
+    const { data: logs, error: logsError } = await supabase
       .from('job_logs')
       .select('*')
       .eq('job_id', jobId)

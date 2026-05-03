@@ -14,9 +14,11 @@ const scrapers = {
 };
 
 export const createScrapeJob = async (source, query, limit = 100) => {
+  if (!supabase) throw new Error('Supabase is not configured');
+
   try {
     const jobId = uuidv4();
-    
+
     const { data, error } = await supabase
       .from('scrape_jobs')
       .insert({

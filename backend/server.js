@@ -135,8 +135,8 @@ app.use('/api/outreach',             requireAuth, requirePlan('starter'), outrea
 app.use('/api/outreach-credentials', requireAuth, requireSubscription, outreachCredentialsRoutes);
 app.use('/api/stripe',               stripeRoutes);
 app.use('/api/settings',             requireAuth, settingsRoutes);
-app.use('/api/campaigns',            campaignsRoutes);
-app.use('/api/templates',            templatesRoutes);
+app.use('/api/campaigns',            requireAuth, campaignsRoutes);
+app.use('/api/templates',            requireAuth, templatesRoutes);
 app.use('/auth',                     authRoutes);
 app.use('/api/gdpr',                 requireAuth, gdprRoutes);
 

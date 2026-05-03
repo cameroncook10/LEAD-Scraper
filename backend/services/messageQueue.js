@@ -369,11 +369,6 @@ export async function processQueue() {
         if (sendResult.success) {
           incrementSendCount(provider);
 
-          // Determine the correct message ID column
-          const messageIdColumn = (provider === 'sms' || provider === 'whatsapp')
-            ? 'sms_message_id'
-            : 'email_message_id';
-
           // Update delivery status
           const messageIdField = provider === 'email' ? 'email_message_id' : 'sms_message_id';
           await supabase

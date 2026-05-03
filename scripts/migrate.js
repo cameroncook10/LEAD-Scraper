@@ -27,14 +27,16 @@ dotenv.config({ path: join(__dirname, '../backend/.env') });
 const MIGRATIONS_DIR = join(__dirname, '../supabase/migrations');
 
 async function run() {
-  const { SUPABASE_URL, SUPABASE_SERVICE_KEY } = process.env;
+  // Accept both SUPABASE_SERVICE_ROLE_KEY (preferred) and legacy SUPABASE_SERVICE_KEY
+  const { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_SERVICE_KEY } = process.env;
+  const serviceKey = SUPABASE_SERVICE_ROLE_KEY || SUPABASE_SERVICE_KEY;
 
-  if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
-    console.error('ERROR: SUPABASE_URL and SUPABASE_SERVICE_KEY must be set.');
+  if (!SUPABASE_URL || !serviceKey) {
+    console.error('ERROR: SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set.');
     process.exit(1);
   }
 
-  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+  const supabase = createClient(SUPABASE_URL, serviceKey);
 
   // Ensure the migrations tracking table exists
   await supabase.rpc('query', {

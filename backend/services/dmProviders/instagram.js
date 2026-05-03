@@ -1,31 +1,28 @@
 /**
  * Instagram DM Provider — Per-User Token Version
- * 
- * Pulls the user's Instagram access token from the `api_keys` table
- * instead of using a global .env token.
+ *
+ * Pulls the user's Instagram access token from the `outreach_credentials`
+ * table (the same table used by the rest of the app).
  */
 import { supabase } from '../../server.js';
 
 const INSTAGRAM_API_BASE = 'https://graph.instagram.com/v21.0';
 
 /**
- * Get a user's Instagram credentials from the database.
+ * Get a user's Instagram credentials from the outreach_credentials table.
  */
 async function getUserInstagramCreds(userId) {
   const { data, error } = await supabase
-    .from('api_keys')
-    .select('encrypted_key, metadata')
+    .from('outreach_credentials')
+    .select('ig_access_token, ig_business_id')
     .eq('user_id', userId)
-    .eq('provider', 'instagram')
     .single();
 
   if (error || !data) return null;
 
   return {
-    accessToken: data.encrypted_key,
-    businessAccountId: data.metadata?.ig_business_id,
-    pageId: data.metadata?.page_id,
-    expiresAt: data.metadata?.expires_at,
+    accessToken: data.ig_access_token || null,
+    businessAccountId: data.ig_business_id || null,
   };
 }
 
@@ -35,7 +32,7 @@ async function getUserInstagramCreds(userId) {
 export async function sendInstagramDM(delivery, userId) {
   // Try per-user token first, fall back to .env
   let accessToken, businessAccountId;
-  
+
   if (userId) {
     const creds = await getUserInstagramCreds(userId);
     if (creds) {
@@ -43,15 +40,15 @@ export async function sendInstagramDM(delivery, userId) {
       businessAccountId = creds.businessAccountId;
     }
   }
-  
+
   // Fallback to .env (for testing or admin use)
   accessToken = accessToken || process.env.INSTAGRAM_ACCESS_TOKEN;
   businessAccountId = businessAccountId || process.env.INSTAGRAM_BUSINESS_ACCOUNT_ID;
 
   if (!accessToken || !businessAccountId) {
-    return { 
-      success: false, 
-      error: 'Instagram not connected. Please connect your Instagram account in Settings.' 
+    return {
+      success: false,
+      error: 'Instagram not connected. Please connect your Instagram account in Settings.',
     };
   }
 
@@ -64,14 +61,14 @@ export async function sendInstagramDM(delivery, userId) {
     }
 
     const igUserId = lead.raw_data?.instagram_user_id;
-    
+
     if (!igUserId) {
       return { success: false, error: 'Lead has no Instagram user ID' };
     }
 
     // Build the message
     let messageText = delivery?.metadata?.personalizedMessage || campaign?.body || '';
-    
+
     messageText = messageText
       .replace(/{{name}}/g, lead.name || 'there')
       .replace(/{{business}}/g, lead.name || 'your business')
@@ -94,9 +91,9 @@ export async function sendInstagramDM(delivery, userId) {
     const data = await response.json();
 
     if (!response.ok) {
-      return { 
-        success: false, 
-        error: `Instagram API error: ${data.error?.message || response.statusText}` 
+      return {
+        success: false,
+        error: `Instagram API error: ${data.error?.message || response.statusText}`,
       };
     }
 
@@ -111,7 +108,7 @@ export async function sendInstagramDM(delivery, userId) {
  */
 export async function checkInstagramReply(conversationId, userId) {
   let accessToken, businessId;
-  
+
   if (userId) {
     const creds = await getUserInstagramCreds(userId);
     if (creds) {
@@ -119,10 +116,10 @@ export async function checkInstagramReply(conversationId, userId) {
       businessId = creds.businessAccountId;
     }
   }
-  
+
   accessToken = accessToken || process.env.INSTAGRAM_ACCESS_TOKEN;
   businessId = businessId || process.env.INSTAGRAM_BUSINESS_ACCOUNT_ID;
-  
+
   if (!accessToken) return { hasReply: false };
 
   try {
@@ -135,8 +132,8 @@ export async function checkInstagramReply(conversationId, userId) {
     if (!response.ok || !data.data) return { hasReply: false };
 
     const replies = data.data.filter(msg => msg.from?.id !== businessId);
-    
-    return { 
+
+    return {
       hasReply: replies.length > 0,
       latestReply: replies[0] || null,
     };

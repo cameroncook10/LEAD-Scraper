@@ -311,7 +311,7 @@ router.get('/:id/stats', async (req, res) => {
 
     // Verify campaign belongs to the authenticated user
     const { data: campaign, error: campaignErr } = await supabase
-      .from('campaigns')
+      .from('email_campaigns')
       .select('id')
       .eq('id', campaignId)
       .eq('user_id', userId)

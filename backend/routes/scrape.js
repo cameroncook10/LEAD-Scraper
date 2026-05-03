@@ -34,9 +34,11 @@ router.post('/start', async (req, res, next) => {
 router.get('/status/:jobId', async (req, res, next) => {
   try {
     const { jobId } = req.params;
-    
+    const supabase = req.app.locals.supabase;
+    if (!supabase) return res.status(503).json({ error: 'Database not configured' });
+
     // Get job status
-    const { data: jobData, error: jobError } = await req.app.locals.supabase
+    const { data: jobData, error: jobError } = await supabase
       .from('scrape_jobs')
       .select('*')
       .eq('id', jobId)
@@ -45,7 +47,7 @@ router.get('/status/:jobId', async (req, res, next) => {
     if (jobError) throw jobError;
 
     // Get job logs
-    const { data: logs, error: logsError } = await req.app.locals.supabase
+    const { data: logs, error: logsError } = await supabase
       .from('job_logs')
       .select('*')
       .eq('job_id', jobId)
@@ -69,7 +71,10 @@ router.get('/status/:jobId', async (req, res, next) => {
 // List all jobs
 router.get('/jobs', async (req, res, next) => {
   try {
-    const { data, error } = await req.app.locals.supabase
+    const supabase = req.app.locals.supabase;
+    if (!supabase) return res.status(503).json({ error: 'Database not configured' });
+
+    const { data, error } = await supabase
       .from('scrape_jobs')
       .select('*')
       .order('created_at', { ascending: false })

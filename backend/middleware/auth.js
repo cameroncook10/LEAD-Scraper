@@ -6,16 +6,23 @@
  */
 import { supabase } from '../server.js';
 
+// Dev-mode mock user — used when Supabase is not configured so the app is
+// fully functional locally without OAuth / subscription gates.
+const DEV_USER = {
+  userId: 'dev-local-user',
+  email: 'dev@localhost',
+  metadata: { full_name: 'Local Developer' },
+};
+
 /**
  * Require authentication via Supabase JWT
  */
 export const requireAuth = async (req, res, next) => {
-  // If Supabase is not configured, the service cannot authenticate users
+  // Dev bypass — if Supabase is not configured, inject a mock user so the
+  // entire app is usable without OAuth.
   if (!supabase) {
-    return res.status(503).json({
-      error: 'Service not configured',
-      message: 'Authentication service is unavailable. Please configure Supabase credentials.'
-    });
+    req.user = DEV_USER;
+    return next();
   }
 
   const authHeader = req.headers.authorization;
@@ -61,6 +68,12 @@ export const requireAuth = async (req, res, next) => {
  * Optional authentication — doesn't fail if token is missing
  */
 export const optionalAuth = async (req, res, next) => {
+  // Dev bypass
+  if (!supabase) {
+    req.user = DEV_USER;
+    return next();
+  }
+
   const authHeader = req.headers.authorization;
   const token = authHeader?.split(' ')[1];
 

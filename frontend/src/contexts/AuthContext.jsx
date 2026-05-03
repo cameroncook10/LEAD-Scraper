@@ -8,15 +8,30 @@ import { supabase } from '../lib/supabase';
  *   const { user, signInWithGoogle, signOut } = useAuth();
  */
 
+// Dev-mode bypass — when Supabase is not configured, provide a mock user
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+const IS_DEV_MODE = !supabaseUrl || supabaseUrl.includes('placeholder') || supabaseUrl.includes('YOUR_PROJECT');
+
+const DEV_USER = {
+  id: 'dev-local-user',
+  email: 'dev@localhost',
+  user_metadata: { full_name: 'Local Developer' },
+};
+
+const DEV_SESSION = IS_DEV_MODE ? { access_token: 'dev-token', user: DEV_USER } : null;
+
 const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [session, setSession] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(IS_DEV_MODE ? DEV_USER : null);
+  const [session, setSession] = useState(DEV_SESSION);
+  const [loading, setLoading] = useState(!IS_DEV_MODE);
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    // Skip Supabase auth in dev mode
+    if (IS_DEV_MODE) return;
+
     // Check if user is already signed in
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
@@ -84,6 +99,8 @@ export function AuthProvider({ children }) {
   const value = {
     user,
     session,
+    // Convenience shortcut so consumers don't need to reach into session
+    accessToken: session?.access_token || null,
     loading,
     error,
     signInWithGoogle,

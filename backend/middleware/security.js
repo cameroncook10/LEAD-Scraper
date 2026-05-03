@@ -1,6 +1,7 @@
 /**
  * Security middleware - headers, HTTPS enforcement, request sanitization
  */
+import crypto from 'crypto';
 
 /**
  * Set security headers (similar to helmet)

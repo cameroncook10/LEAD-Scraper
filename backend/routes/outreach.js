@@ -12,7 +12,9 @@ const router = express.Router();
 
 router.post('/instagram', async (req, res) => {
   try {
-    const { recipientId, message, userId } = req.body;
+    const { recipientId, message } = req.body;
+    // Use authenticated user's ID — never trust client-supplied userId
+    const userId = req.user?.userId;
     if (!recipientId || !message) return res.status(400).json({ error: 'recipientId and message are required' });
     const supabase = req.app.locals.supabase;
     const result = await sendInstagramDM(recipientId, message, { supabase, userId });
@@ -24,7 +26,9 @@ router.post('/instagram', async (req, res) => {
 
 router.post('/facebook', async (req, res) => {
   try {
-    const { recipientPsid, message, userId } = req.body;
+    const { recipientPsid, message } = req.body;
+    // Use authenticated user's ID — never trust client-supplied userId
+    const userId = req.user?.userId;
     if (!recipientPsid || !message) return res.status(400).json({ error: 'recipientPsid and message are required' });
     const supabase = req.app.locals.supabase;
     const result = await sendFacebookMessage(recipientPsid, message, { supabase, userId });
@@ -36,7 +40,9 @@ router.post('/facebook', async (req, res) => {
 
 router.post('/email', async (req, res) => {
   try {
-    const { to, subject, text, html, userId } = req.body;
+    const { to, subject, text, html } = req.body;
+    // Use authenticated user's ID — never trust client-supplied userId
+    const userId = req.user?.userId;
     if (!to || !subject) return res.status(400).json({ error: 'to and subject are required' });
     const supabase = req.app.locals.supabase;
     const result = await sendEmail({ to, subject, text, html }, { supabase, userId });
