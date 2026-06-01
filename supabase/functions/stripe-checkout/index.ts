@@ -31,12 +31,12 @@ const PLANS: Record<string, { name: string; amount: number; description: string 
   },
   starter_annual: {
     name: 'Agent Lead Starter (Annual)',
-    amount: 39700, // $397/mo billed annually
+    amount: 476400, // $397/mo billed annually = $397 × 12 charged once per year
     description: '5,000 leads/mo, 500 DMs, AI qualification, basic analytics — annual billing',
   },
   growth_annual: {
     name: 'Agent Lead Growth (Annual)',
-    amount: 160000, // $1,600/mo billed annually
+    amount: 1920000, // $1,600/mo billed annually = $1,600 × 12 charged once per year
     description: 'Unlimited leads, unlimited DMs, CRM sync, priority support — annual billing',
   },
 };

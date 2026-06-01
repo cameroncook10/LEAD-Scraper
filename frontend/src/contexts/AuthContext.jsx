@@ -8,9 +8,13 @@ import { supabase } from '../lib/supabase';
  *   const { user, signInWithGoogle, signOut } = useAuth();
  */
 
-// Dev-mode bypass — when Supabase is not configured, provide a mock user
+// Dev-mode bypass — when Supabase is not configured, provide a mock user.
+// Gated behind import.meta.env.DEV (true only under `vite` dev server, false in
+// any production `vite build`) so a misconfigured prod build can NEVER fail open
+// and hand out a mock authenticated user.
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const IS_DEV_MODE = !supabaseUrl || supabaseUrl.includes('placeholder') || supabaseUrl.includes('YOUR_PROJECT');
+const IS_DEV_MODE = import.meta.env.DEV &&
+  (!supabaseUrl || supabaseUrl.includes('placeholder') || supabaseUrl.includes('YOUR_PROJECT'));
 
 const DEV_USER = {
   id: 'dev-local-user',

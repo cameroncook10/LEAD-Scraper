@@ -19,8 +19,16 @@ const DEV_USER = {
  */
 export const requireAuth = async (req, res, next) => {
   // Dev bypass — if Supabase is not configured, inject a mock user so the
-  // entire app is usable without OAuth.
+  // entire app is usable without OAuth. NEVER fail open in production: a
+  // misconfigured prod deploy (missing SUPABASE_URL) must lock users out,
+  // not silently grant everyone the local dev user's access.
   if (!supabase) {
+    if (process.env.NODE_ENV === 'production') {
+      return res.status(503).json({
+        error: 'Service misconfigured',
+        message: 'Authentication is unavailable because Supabase is not configured.',
+      });
+    }
     req.user = DEV_USER;
     return next();
   }

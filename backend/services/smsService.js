@@ -20,6 +20,14 @@ function getClient() {
 const fromNumber     = () => process.env.TWILIO_PHONE_NUMBER;
 const whatsappNumber = () => `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER || process.env.TWILIO_PHONE_NUMBER}`;
 
+// Build a Twilio statusCallback URL only when BACKEND_URL is configured.
+// Passing `undefined/api/...` makes Twilio reject the whole message, so we
+// omit the callback entirely rather than send a malformed one.
+const statusCallback = (path) => {
+  const base = process.env.BACKEND_URL;
+  return base ? `${base}${path}` : undefined;
+};
+
 /**
  * Send SMS message
  */
@@ -41,7 +49,7 @@ export const smsService = {
         body: body.substring(0, 160), // SMS limit
         from: fromNumber(),
         to: this.normalizePhoneNumber(to),
-        statusCallback: `${process.env.BACKEND_URL}/api/webhooks/sms-status?tracking_id=${trackingId}`
+        statusCallback: statusCallback(`/api/webhooks/sms-status?tracking_id=${trackingId}`)
       });
 
       console.log(`✓ SMS sent: ${message.sid}`);
@@ -75,7 +83,7 @@ export const smsService = {
         from: whatsappNumber(),
         body,
         to: `whatsapp:${this.normalizePhoneNumber(to)}`,
-        statusCallback: `${process.env.BACKEND_URL}/api/webhooks/whatsapp-status?tracking_id=${trackingId}`
+        statusCallback: statusCallback(`/api/webhooks/whatsapp-status?tracking_id=${trackingId}`)
       });
 
       console.log(`✓ WhatsApp sent: ${message.sid}`);

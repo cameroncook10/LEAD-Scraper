@@ -3,10 +3,13 @@ import { Navigate, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { Loader2 } from 'lucide-react';
 
-// Dev-mode bypass — when Supabase is not configured, skip auth entirely
-// so the full app (dashboard, leads, scrapers, etc.) is usable locally.
+// Dev-mode bypass — when Supabase is not configured, skip auth entirely so the
+// full app (dashboard, leads, scrapers, etc.) is usable locally. Gated behind
+// import.meta.env.DEV so a production build never bypasses auth, even if the
+// Supabase env vars are missing or still set to placeholders.
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const IS_DEV_MODE = !supabaseUrl || supabaseUrl.includes('placeholder') || supabaseUrl.includes('YOUR_PROJECT');
+const IS_DEV_MODE = import.meta.env.DEV &&
+  (!supabaseUrl || supabaseUrl.includes('placeholder') || supabaseUrl.includes('YOUR_PROJECT'));
 
 const DEV_USER = {
   id: 'dev-local-user',

@@ -46,22 +46,40 @@ const PRICE_TO_PLAN = {
   // 'price_1Abc...': 'growth',
 };
 
+const VALID_PLANS = ['starter', 'growth', 'enterprise'];
+
+// Normalise a plan key like "starter_annual" → "starter" (entitlements are
+// identical for monthly vs annual; the billing interval lives on Stripe).
+function normalizePlan(value) {
+  if (!value) return null;
+  const base = String(value).replace(/_annual$/, '');
+  return VALID_PLANS.includes(base) ? base : null;
+}
+
 function resolvePlan(subscription) {
+  // Preferred: the plan we stamped onto subscription metadata at checkout time.
+  // Both checkout paths set this — the backend service (services/stripe.js) and
+  // the Supabase edge function (functions/stripe-checkout) use
+  // subscription_data.metadata.plan, which surfaces here as subscription.metadata.plan.
+  const fromSubMeta = normalizePlan(subscription?.metadata?.plan);
+  if (fromSubMeta) return fromSubMeta;
+
   if (!subscription?.items?.data?.length) return 'starter';
-  const priceId = subscription.items.data[0].price.id;
-  if (PRICE_TO_PLAN[priceId]) return PRICE_TO_PLAN[priceId];
+  const price = subscription.items.data[0].price;
 
-  // Fall back: check product metadata for a "plan" field
-  const meta = subscription.items.data[0].price.metadata || {};
-  if (meta.plan && ['starter', 'growth', 'enterprise'].includes(meta.plan)) {
-    return meta.plan;
-  }
+  // Explicit price-id → plan map (populate if you switch to fixed Stripe Prices)
+  if (PRICE_TO_PLAN[price.id]) return PRICE_TO_PLAN[price.id];
 
-  // Last resort — infer from price amount (cents)
-  const amount = subscription.items.data[0].price.unit_amount || 0;
-  if (amount >= 150000) return 'enterprise';
-  if (amount >= 100000) return 'growth';
-  return 'starter';
+  // Price-level metadata
+  const fromPriceMeta = normalizePlan(price.metadata?.plan);
+  if (fromPriceMeta) return fromPriceMeta;
+
+  // Last resort — infer from the MONTHLY-EQUIVALENT amount. Annual plans bill a
+  // full year up front, so divide by 12 before comparing (otherwise a $397/mo
+  // annual plan looks like a $4,764 charge and is misclassified).
+  const amount = price.unit_amount || 0;
+  const monthly = price.recurring?.interval === 'year' ? Math.round(amount / 12) : amount;
+  return monthly >= 100000 ? 'growth' : 'starter';
 }
 
 // ---------------------------------------------------------------------------
@@ -323,18 +341,26 @@ async function upsertSubscription(supabaseAdmin, userId, customerId, subscriptio
  */
 async function resolveUserId(supabaseAdmin, email) {
   if (!email) return null;
-  // Use targeted lookup instead of fetching all users
-  const { data, error } = await supabaseAdmin.auth.admin.listUsers({ filter: `email.eq.${email.toLowerCase()}` });
-  if (error || !data?.users?.length) {
-    // Fallback: try exact match via getUserByEmail if available
-    const { data: userData, error: ue } = await supabaseAdmin.auth.admin.getUserByEmail(email);
-    if (ue || !userData?.user) {
-      console.error('[resolveUserId] no user found for email:', email);
+  const target = email.toLowerCase();
+
+  // supabase-js admin.listUsers is paginated (1-based). It does NOT support a
+  // `filter` option and there is no getUserByEmail — so scan pages until we
+  // find a match or run out of users.
+  const perPage = 200;
+  for (let page = 1; page <= 50; page++) {
+    const { data, error } = await supabaseAdmin.auth.admin.listUsers({ page, perPage });
+    if (error) {
+      console.error('[resolveUserId] listUsers error:', error.message);
       return null;
     }
-    return userData.user.id;
+    const users = data?.users || [];
+    const match = users.find((u) => u.email?.toLowerCase() === target);
+    if (match) return match.id;
+    if (users.length < perPage) break; // reached the last page
   }
-  return data.users[0].id;
+
+  console.error('[resolveUserId] no user found for email:', email);
+  return null;
 }
 
 /**
