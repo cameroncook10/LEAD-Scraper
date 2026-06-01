@@ -25,9 +25,32 @@ const ADMIN_EMAILS = new Set(
   (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean)
 );
 
+// ---------------------------------------------------------------------------
+// Manual access list — paying clients granted access out-of-band (e.g. wire /
+// bank transfer) before Stripe is live. Comma-separated emails in
+// MANUAL_ACCESS_EMAILS. When this list is non-empty AND Stripe is not yet
+// configured, it becomes the access gate (only these emails + admins get in);
+// when Stripe IS configured these emails get comped, full access.
+// ---------------------------------------------------------------------------
+const MANUAL_ACCESS_EMAILS = new Set(
+  (process.env.MANUAL_ACCESS_EMAILS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean)
+);
+
 function isAdmin(req) {
   return req.user?.email && ADMIN_EMAILS.has(req.user.email.toLowerCase());
 }
+
+// Admins + manually-granted (wire-paid) clients always pass the paywall.
+function hasManualAccess(req) {
+  const email = req.user?.email?.toLowerCase();
+  return !!email && (ADMIN_EMAILS.has(email) || MANUAL_ACCESS_EMAILS.has(email));
+}
+
+const NO_ACCESS_RESPONSE = {
+  error: 'Access required',
+  message: 'Your account is not active yet. Please contact us to get started.',
+  code: 'NO_ACCESS',
+};
 
 // ---------------------------------------------------------------------------
 // Plan limits (per billing period / month)
@@ -104,10 +127,14 @@ async function getCurrentUsage(userId, periodStart, periodEnd) {
 export const requireSubscription = async (req, res, next) => {
   // Skip when Supabase is not configured (local/Electron dev mode)
   if (!supabase) return next();
-  // Skip when Stripe is not configured (dev mode — no paywall)
-  if (!STRIPE_CONFIGURED) return next();
-  // Admin bypass
-  if (isAdmin(req)) return next();
+  // Admins + wire-paid clients always pass
+  if (hasManualAccess(req)) return next();
+  // Before Stripe is live: the manual allowlist (if set) is the access gate;
+  // with no allowlist the app stays open (no paywall yet).
+  if (!STRIPE_CONFIGURED) {
+    if (MANUAL_ACCESS_EMAILS.size > 0) return res.status(403).json(NO_ACCESS_RESPONSE);
+    return next();
+  }
 
   const userId = req.user?.userId;
   if (!userId) {
@@ -142,10 +169,14 @@ export function requirePlan(minimumPlan) {
   return async (req, res, next) => {
     // Skip when Supabase is not configured (local/Electron dev mode)
     if (!supabase) return next();
-    // Skip when Stripe is not configured (dev mode — no paywall)
-    if (!STRIPE_CONFIGURED) return next();
-    // Admin bypass
-    if (isAdmin(req)) return next();
+    // Admins + wire-paid clients always pass (full access, no plan/usage limits)
+    if (hasManualAccess(req)) return next();
+    // Before Stripe is live: the manual allowlist (if set) is the access gate;
+    // with no allowlist the app stays open (no paywall yet).
+    if (!STRIPE_CONFIGURED) {
+      if (MANUAL_ACCESS_EMAILS.size > 0) return res.status(403).json(NO_ACCESS_RESPONSE);
+      return next();
+    }
 
     const userId = req.user?.userId;
     if (!userId) {

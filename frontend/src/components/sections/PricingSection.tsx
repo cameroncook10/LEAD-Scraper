@@ -73,6 +73,12 @@ const plans = [
   },
 ];
 
+// Self-serve Stripe checkout is enabled only once a real publishable key is set.
+// Until then (e.g. while clients pay by wire) the plan CTAs route to sales.
+const STRIPE_PK = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "";
+const STRIPE_ENABLED = !!STRIPE_PK && !STRIPE_PK.includes("placeholder");
+const SALES_EMAIL = import.meta.env.VITE_CONTACT_EMAIL || "sales@agentlead.io";
+
 export function PricingSection() {
   const [isAnnual, setIsAnnual] = useState(false);
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
@@ -81,7 +87,15 @@ export function PricingSection() {
 
   const handleCheckout = async (plan: typeof plans[0]) => {
     if (plan.key === "enterprise") {
-      window.location.href = "mailto:sales@agentlead.io?subject=Enterprise%20Plan%20Inquiry";
+      window.location.href = `mailto:${SALES_EMAIL}?subject=Enterprise%20Plan%20Inquiry`;
+      return;
+    }
+
+    // Pre-Stripe (clients paying by wire): send prospects to sales instead of a
+    // checkout that can't complete yet.
+    if (!STRIPE_ENABLED) {
+      window.location.href =
+        `mailto:${SALES_EMAIL}?subject=${encodeURIComponent(`${plan.name} plan — getting started`)}`;
       return;
     }
 

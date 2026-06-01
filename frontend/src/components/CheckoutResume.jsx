@@ -10,6 +10,9 @@ import { useAuth } from '../contexts/AuthContext';
 import { createStripeCheckout } from '../services/api';
 import { takePendingCheckout } from '../lib/checkout';
 
+const STRIPE_PK = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '';
+const STRIPE_ENABLED = !!STRIPE_PK && !STRIPE_PK.includes('placeholder');
+
 export default function CheckoutResume() {
   const { isAuthenticated, loading } = useAuth();
   const started = useRef(false);
@@ -17,8 +20,9 @@ export default function CheckoutResume() {
   useEffect(() => {
     if (loading || !isAuthenticated || started.current) return;
 
+    // Consume any stashed plan even when Stripe is off, so it doesn't linger.
     const pending = takePendingCheckout();
-    if (!pending) return;
+    if (!pending || !STRIPE_ENABLED) return;
 
     started.current = true;
     (async () => {

@@ -9,6 +9,26 @@ Last reviewed: 2026-05-31. Everything in "Already done in code" below is committ
 
 ---
 
+## 0. Running now, before Stripe (clients paying by wire)
+
+You don't need Stripe to go live. Right now:
+
+- **Leave `STRIPE_SECRET_KEY` and `VITE_STRIPE_PUBLISHABLE_KEY` unset.** With no
+  Stripe key, the paywall is off and the landing-page plan buttons route to your
+  sales email (`VITE_CONTACT_EMAIL`, default sales@agentlead.io) instead of a
+  checkout.
+- **Grant a client access after they wire:** add their email to
+  `MANUAL_ACCESS_EMAILS` (comma-separated) in the backend env and restart. While
+  Stripe is off and this list has any entry, **only** those emails (+
+  `ADMIN_EMAILS`) can use the app — that's your access gate. Leave it blank to
+  keep the app open to anyone who signs in.
+- Everything else below (Supabase, DB migrations, deploy) still applies. Skip the
+  Stripe (§A.2) and edge-function (§C) steps until you're ready to switch on
+  self-serve billing — at which point set the two Stripe keys and the manual list
+  becomes a comp list instead of the gate.
+
+---
+
 ## ✅ Already done in code (this pass)
 
 These were real bugs/blockers that are now fixed in the repo:
@@ -53,7 +73,7 @@ Create these accounts and collect the keys. Put backend keys in your host's env
       (`https://yourdomain.com/dashboard`).
 - [ ] **Run the database migrations** (see §B).
 
-### 2. Stripe (billing)
+### 2. Stripe (billing) — DEFERRED (skip while clients pay by wire, see §0)
 - [ ] `STRIPE_SECRET_KEY` (use `sk_test_…` first, then `sk_live_…`)
 - [ ] `VITE_STRIPE_PUBLISHABLE_KEY` (`pk_…`) for the frontend
 - [ ] Create a webhook endpoint → `https://<your-backend>/api/webhooks/stripe`,
