@@ -1,7 +1,10 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import { Check, Sparkles, Loader2 } from "lucide-react";
 import { createStripeCheckout } from "../../services/api";
+import { useAuth } from "../../contexts/AuthContext";
+import { savePendingCheckout } from "../../lib/checkout";
 
 const plans = [
   {
@@ -73,6 +76,8 @@ const plans = [
 export function PricingSection() {
   const [isAnnual, setIsAnnual] = useState(false);
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
 
   const handleCheckout = async (plan: typeof plans[0]) => {
     if (plan.key === "enterprise") {
@@ -80,42 +85,29 @@ export function PricingSection() {
       return;
     }
 
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-    if (!supabaseUrl || !supabaseKey) {
-      alert("Payment system is not configured yet. Please contact support@agentlead.io.");
+    // Signup-first: anonymous visitors sign in, then CheckoutResume completes
+    // the purchase once authenticated so the subscription links to a real user.
+    if (!isAuthenticated) {
+      savePendingCheckout(plan.key, isAnnual);
+      navigate("/login");
       return;
     }
 
     setLoadingPlan(plan.key);
     try {
-      const planKey = isAnnual ? `${plan.key}_annual` : plan.key;
-
-      const res = await fetch(`${supabaseUrl}/functions/v1/stripe-checkout`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${supabaseKey}`,
-        },
-        body: JSON.stringify({ plan: planKey }),
-      });
-
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(`Checkout failed (${res.status}): ${text}`);
-      }
-
-      const data = await res.json();
-
-      if (data.url) {
-        window.location.href = data.url;
+      const { url } = await createStripeCheckout(plan.key, isAnnual);
+      if (url) {
+        window.location.href = url;
       } else {
-        throw new Error(data.error || 'No checkout URL returned');
+        throw new Error("No checkout URL returned");
       }
     } catch (err: any) {
       console.error("Checkout error:", err);
-      alert(err.message || "Unable to start checkout. Please try again.");
+      alert(
+        err?.response?.data?.error ||
+          err.message ||
+          "Unable to start checkout. Please try again."
+      );
     } finally {
       setLoadingPlan(null);
     }

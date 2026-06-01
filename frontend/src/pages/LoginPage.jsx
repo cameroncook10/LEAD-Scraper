@@ -4,10 +4,12 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
+import { hasPendingCheckout } from '../lib/checkout';
 
 export function LoginPage() {
   const { signInWithGoogle, loading } = useAuth();
   const [error, setError] = React.useState(null);
+  const pendingCheckout = hasPendingCheckout();
 
   const handleGoogleSignIn = async () => {
     setError(null);
@@ -37,12 +39,18 @@ export function LoginPage() {
               <span className="text-cyan-400">Lead</span>
             </span>
           </div>
-          <p className="text-gray-500 text-sm">Sign in to manage your leads and campaigns</p>
+          <p className="text-gray-500 text-sm">
+            {pendingCheckout
+              ? 'Sign in to complete your purchase — you’ll go straight to checkout'
+              : 'Sign in or create your account to manage your leads and campaigns'}
+          </p>
         </div>
 
         {/* Card */}
         <div className="glass-liquid rounded-2xl p-8">
-          <h2 className="text-xl font-semibold text-white mb-6 text-center">Welcome Back</h2>
+          <h2 className="text-xl font-semibold text-white mb-6 text-center">
+            {pendingCheckout ? 'Almost there' : 'Welcome'}
+          </h2>
 
           {error && (
             <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">

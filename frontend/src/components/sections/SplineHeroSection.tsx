@@ -1,51 +1,20 @@
 'use client';
 
-import { useState } from "react";
 import { LeadScrapingVisual } from "@/components/ui/lead-scraping-visual";
 import { Spotlight } from "@/components/ui/spotlight";
 import { motion } from "framer-motion";
-import { ArrowRight, Play, Loader2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { ArrowRight, Play } from "lucide-react";
+import { useAuth } from "../../contexts/AuthContext";
 
 export function SplineHeroSection() {
-  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
 
-  const handleGetStarted = async () => {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-    if (!supabaseUrl || !supabaseKey) {
-      alert("Payment system is not configured yet. Please contact support@agentlead.io.");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const res = await fetch(`${supabaseUrl}/functions/v1/stripe-checkout`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${supabaseKey}`,
-        },
-        body: JSON.stringify({ plan: 'starter' }),
-      });
-
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(`Checkout failed (${res.status}): ${text}`);
-      }
-
-      const data = await res.json();
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        throw new Error(data.error || 'No checkout URL returned');
-      }
-    } catch (err: any) {
-      console.error("Checkout error:", err);
-      alert(err.message || "Unable to start checkout. Please try again.");
-    } finally {
-      setLoading(false);
-    }
+  // Signup-first: existing users go to their dashboard; new visitors sign up.
+  // Plan selection happens in the pricing section.
+  const handleGetStarted = () => {
+    navigate(isAuthenticated ? "/dashboard" : "/login");
   };
 
   return (
@@ -102,22 +71,12 @@ export function SplineHeroSection() {
             <div className="flex flex-wrap gap-4 mb-12">
               <motion.button
                 onClick={handleGetStarted}
-                disabled={loading}
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
-                className={`btn-primary px-8 py-4 text-base rounded-xl ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
+                className="btn-primary px-8 py-4 text-base rounded-xl"
               >
-                {loading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Redirecting...
-                  </>
-                ) : (
-                  <>
-                    Get Started
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </>
-                )}
+                Get Started
+                <ArrowRight className="w-4 h-4 ml-2" />
               </motion.button>
               <motion.button
                 onClick={() => document.getElementById('dashboard')?.scrollIntoView({ behavior: 'smooth' })}

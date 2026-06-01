@@ -129,30 +129,21 @@ supabase secrets set STRIPE_SECRET_KEY=sk_live_... FRONTEND_URL=https://yourdoma
 
 ---
 
-## D. ⚠️ One product decision: the checkout / signup flow
+## D. ✅ Checkout / signup flow — DONE (signup-first)
 
-There are **two checkout paths** in the codebase and you should pick one:
+This is now wired. Anonymous visitors who click a paid plan are sent to `/login`,
+their plan choice is stashed, and after Google sign-in `CheckoutResume` runs the
+**authenticated** backend checkout (`/api/stripe/create-checkout`) — so every
+subscription is created against a real user and the webhook links it reliably.
 
-- **Path 1 — Supabase edge function (currently wired to the landing page).**
-  `PricingSection` / `SplineHeroSection` call the edge function anonymously and
-  collect the email at Stripe. **Gap:** if the buyer doesn't already have a
-  Supabase account with that exact email, the webhook can't link the
-  subscription to a user (`resolveUserId` returns null). Works only if buyers
-  sign up first, or sign up later with the same email.
+- Pricing buttons & hero CTA: `PricingSection.tsx`, `SplineHeroSection.tsx`
+- Resume-after-login: `frontend/src/components/CheckoutResume.jsx` (+ `lib/checkout.js`)
+- Backend checkout: `backend/routes/stripe.js` → `services/stripe.js`
 
-- **Path 2 — backend `/api/stripe/create-checkout` (requires login).**
-  Uses the authenticated user's email, so account linking is guaranteed. Already
-  implemented (`backend/routes/stripe.js`) and exposed via `api.js`
-  `createStripeCheckout()`, but the landing-page buttons don't call it yet.
-
-**Recommended:** signup-first. Make the landing "Get Started"/pricing buttons
-route anonymous users to `/login` (Google sign-in), then run checkout through the
-authenticated backend endpoint. This makes subscription→user linking reliable and
-lets you retire the edge function. This is a ~1 file change in `PricingSection.tsx`
-+ `SplineHeroSection.tsx` — tell me which path you want and I'll wire it.
-
-(If you keep Path 1, the annual-price fix above means pricing is now correct, but
-you must accept the email-matching limitation.)
+Consequence for setup: the Supabase **`stripe-checkout` edge function is no longer
+used** by the app. You can skip deploying it (§C "Edge function" step is optional)
+or delete `supabase/functions/stripe-checkout/`. Checkout works entirely through
+your backend, so the backend must be deployed and reachable for billing to work.
 
 ---
 

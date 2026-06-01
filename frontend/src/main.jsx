@@ -16,6 +16,7 @@ import TemplatesPage from './pages/TemplatesPage'
 import JobMonitor from './pages/JobMonitor'
 import ErrorBoundary from './components/ErrorBoundary'
 import CookieConsent from './components/CookieConsent'
+import CheckoutResume from './components/CheckoutResume'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { AuthProvider } from './contexts/AuthContext'
 import './index.css'
@@ -25,6 +26,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <ErrorBoundary>
       <BrowserRouter>
         <AuthProvider>
+          <CheckoutResume />
           <Routes>
             {/* Public routes */}
             <Route path="/" element={<App />} />
