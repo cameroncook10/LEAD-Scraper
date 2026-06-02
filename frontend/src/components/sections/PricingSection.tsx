@@ -3,8 +3,7 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Check, Sparkles, ArrowRight } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
-
-const SALES_EMAIL = import.meta.env.VITE_CONTACT_EMAIL || "sales@agentlead.io";
+import { BOOK_CALL_HREF, bookCallLinkProps } from "../../lib/contact";
 
 const INCLUDED = [
   "Unlimited lead scraping — Google Maps, Yelp, Instagram & Facebook",
@@ -85,7 +84,8 @@ export function PricingSection() {
               <ArrowRight className="w-4 h-4" />
             </button>
             <a
-              href={`mailto:${SALES_EMAIL}?subject=${encodeURIComponent("Agent Lead — setup call")}`}
+              href={BOOK_CALL_HREF}
+              {...bookCallLinkProps}
               className="btn-ghost px-8 py-4 text-base rounded-xl flex items-center justify-center"
             >
               Book a setup call

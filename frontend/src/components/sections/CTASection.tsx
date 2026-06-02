@@ -1,6 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { ArrowRight, Download } from "lucide-react";
+import { ArrowRight } from "lucide-react";
+import { BOOK_CALL_HREF, bookCallLinkProps } from "../../lib/contact";
 
 export function CTASection() {
   return (
@@ -49,7 +50,8 @@ export function CTASection() {
               </motion.button>
 
               <motion.a
-                href="mailto:sales@agentlead.io?subject=Agent%20Lead%20%E2%80%94%20setup%20call"
+                href={BOOK_CALL_HREF}
+                {...bookCallLinkProps}
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
                 className="flex items-center gap-2 px-10 py-4 text-base rounded-xl font-semibold bg-white/5 border border-white/10 text-gray-300 hover:bg-white/10 transition-colors"
