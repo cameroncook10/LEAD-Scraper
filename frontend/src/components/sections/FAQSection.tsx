@@ -28,16 +28,16 @@ const faqs = [
     a: "Our AI scoring system analyzes engagement signals, business size, online activity, and custom criteria you define to prioritize leads. Accuracy varies depending on data quality and your specific criteria. We recommend using AI scores as a prioritization tool alongside your own judgment.",
   },
   {
-    q: "Can I try Agent Lead before committing?",
-    a: "We don't offer a free trial, but you can cancel anytime if it's not the right fit. If you're unhappy within the first 14 days of your initial payment, you can request a refund consideration. Email support@agentlead.io if you have questions before purchasing.",
+    q: "How do I get started?",
+    a: "We scope each engagement on a quick setup call, then configure your scrapers, AI qualification, and outreach for you. There's a one-time setup fee — no monthly plans to manage. Book a call or email support@agentlead.io to get started.",
   },
   {
     q: "What kind of support do you offer?",
-    a: "All plans include email support. Growth and Enterprise plans get priority support with faster response times, plus a dedicated account manager to help optimize your campaigns.",
+    a: "Every engagement includes priority onboarding and support to help optimize your campaigns. Dedicated, higher-touch support is available — we'll cover exactly what you need on your setup call.",
   },
   {
     q: "Can I white-label the dashboard for my clients?",
-    a: "Yes — our Enterprise plan includes white-label dashboards, custom branding, and multi-client management. Perfect for agencies managing lead gen for multiple businesses.",
+    a: "Yes — white-label dashboards, custom branding, and multi-client management are available for agencies managing lead gen for multiple businesses. Mention it on your setup call and we'll include it in your build.",
   },
 ];
 

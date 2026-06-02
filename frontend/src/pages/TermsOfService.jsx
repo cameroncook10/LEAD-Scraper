@@ -58,15 +58,14 @@ export default function TermsOfService() {
 
           {/* 4 */}
           <section>
-            <h2 className="text-xl font-semibold text-white mb-3">4. Subscription and Payment Terms</h2>
+            <h2 className="text-xl font-semibold text-white mb-3">4. Fees and Payment Terms</h2>
             <p className="mb-3">
-              AgentLead offers paid subscription plans. By subscribing, you agree to the following:
+              AgentLead is provided as a done-for-you service for a one-time setup fee. By engaging us, you agree to the following:
             </p>
             <ul className="list-disc list-inside space-y-2 text-gray-400">
-              <li><span className="text-gray-300">Auto-Renewal:</span> Subscriptions automatically renew at the end of each billing cycle (monthly or annual) unless you cancel before the renewal date.</li>
-              <li><span className="text-gray-300">Payment:</span> All payments are processed securely through Stripe. You authorize us to charge your selected payment method for the applicable subscription fees.</li>
-              <li><span className="text-gray-300">Price Changes:</span> We may change subscription prices with at least 30 days' notice. Price changes take effect at the start of your next billing cycle.</li>
-              <li><span className="text-gray-300">Cancellation:</span> You may cancel your subscription at any time. Upon cancellation, you will retain access to the Service until the end of your current billing period. No prorated refunds are issued for partial billing periods.</li>
+              <li><span className="text-gray-300">Setup Fee:</span> The fee for your engagement is agreed and invoiced in writing before setup work begins. It is a one-time charge, not a subscription.</li>
+              <li><span className="text-gray-300">No Auto-Renewal:</span> There are no automatic recurring charges. You will not be billed again unless you agree to a new engagement in writing.</li>
+              <li><span className="text-gray-300">Payment:</span> Fees are payable by invoice (e.g., bank transfer) or any other method we agree with you. If card payment is enabled, it is handled by a third-party payment provider.</li>
               <li><span className="text-gray-300">Refunds:</span> Please refer to our <Link to="/refund-policy" className="text-cyan-400 hover:underline">Refund Policy</Link> for details on refund eligibility.</li>
             </ul>
           </section>
@@ -142,7 +141,7 @@ export default function TermsOfService() {
           <section>
             <h2 className="text-xl font-semibold text-white mb-3">11. Termination</h2>
             <p>
-              We may suspend or terminate your account and access to the Service at any time, with or without cause, and with or without notice. Grounds for termination include, but are not limited to, violation of these Terms, illegal activity, non-payment, or abuse of the Service. Upon termination, your right to use the Service ceases immediately. You may terminate your account at any time by canceling your subscription and contacting us at support@agentlead.io.
+              We may suspend or terminate your account and access to the Service at any time, with or without cause, and with or without notice. Grounds for termination include, but are not limited to, violation of these Terms, illegal activity, non-payment, or abuse of the Service. Upon termination, your right to use the Service ceases immediately. You may terminate your account at any time by contacting us at support@agentlead.io.
             </p>
           </section>
 

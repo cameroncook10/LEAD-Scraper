@@ -35,27 +35,26 @@ export default function RefundPolicy() {
           {/* Intro */}
           <section>
             <p>
-              At AgentLead, we want you to be satisfied with your purchase. This Refund Policy outlines the terms under which refunds may be issued for our subscription plans.
+              At AgentLead, we want you to be satisfied with your purchase. This Refund Policy outlines the terms under which refunds may be issued for our setup fees and services.
             </p>
           </section>
 
           {/* 1 */}
           <section>
-            <h2 className="text-xl font-semibold text-white mb-3">1. Subscription Plans</h2>
+            <h2 className="text-xl font-semibold text-white mb-3">1. Setup Fees &amp; Services</h2>
             <p>
-              AgentLead offers paid subscription plans billed on a monthly or annual basis. All subscriptions are processed through Stripe. By subscribing, you agree to the billing terms associated with your selected plan.
+              AgentLead is provided as a done-for-you service with a one-time setup fee that is agreed and invoiced before work begins. Pricing is tailored to your engagement and confirmed in writing. We do not charge recurring subscription fees unless separately agreed with you in writing.
             </p>
           </section>
 
           {/* 2 */}
           <section>
-            <h2 className="text-xl font-semibold text-white mb-3">2. Cancellation Policy</h2>
-            <p className="mb-3">You may cancel your subscription at any time. Here is how cancellation works:</p>
+            <h2 className="text-xl font-semibold text-white mb-3">2. Service Term</h2>
+            <p className="mb-3">Because AgentLead is a setup-fee service rather than a subscription:</p>
             <ul className="list-disc list-inside space-y-2 text-gray-400">
-              <li><span className="text-gray-300">Cancel Anytime:</span> You can cancel your subscription from your account settings or by contacting us at support@agentlead.io.</li>
-              <li><span className="text-gray-300">Access Until Period End:</span> After cancellation, you will retain full access to the Service until the end of your current billing period.</li>
-              <li><span className="text-gray-300">No Prorated Refunds:</span> We do not issue prorated refunds for unused time remaining in a billing period after cancellation.</li>
-              <li><span className="text-gray-300">Auto-Renewal:</span> If you do not cancel before the end of your billing period, your subscription will automatically renew and you will be charged for the next period.</li>
+              <li><span className="text-gray-300">No Auto-Renewal:</span> There are no automatic recurring charges. You will not be billed again without a new written agreement.</li>
+              <li><span className="text-gray-300">Ongoing Access:</span> After setup is complete, you retain access to the Service for the term described in your engagement.</li>
+              <li><span className="text-gray-300">Stopping Service:</span> You may stop using the Service at any time by contacting us at support@agentlead.io.</li>
             </ul>
           </section>
 
@@ -65,16 +64,16 @@ export default function RefundPolicy() {
             <p className="mb-3">Refunds are handled as follows:</p>
 
             <div className="bg-white/[0.03] border border-white/[0.08] rounded-xl p-6 mb-4">
-              <h3 className="text-lg font-medium text-white mb-2">First Payment Refund Window</h3>
+              <h3 className="text-lg font-medium text-white mb-2">Before Setup Begins</h3>
               <p className="text-gray-400">
-                If you are unhappy with the Service, you may request a refund within <span className="text-white font-medium">14 days</span> of your first subscription payment. Refund requests within this window will be considered on a case-by-case basis. We may issue a full or partial refund at our discretion.
+                If you request a refund of your setup fee <span className="text-white font-medium">before we have begun setup work</span>, we will issue a full refund. Once setup work has started, the fee covers the time and configuration already performed.
               </p>
             </div>
 
             <div className="bg-white/[0.03] border border-white/[0.08] rounded-xl p-6 mb-4">
-              <h3 className="text-lg font-medium text-white mb-2">After 14 Days</h3>
+              <h3 className="text-lg font-medium text-white mb-2">After Setup Has Begun</h3>
               <p className="text-gray-400">
-                After 14 days from your first payment, or for any subsequent billing periods, refunds are generally not available. You can cancel your subscription to prevent future charges, and you will continue to have access until your current billing period ends.
+                Once setup work is underway or complete, refunds are evaluated on a case-by-case basis depending on the work performed. We'll always try to make things right — reach out and we'll discuss options.
               </p>
             </div>
 
@@ -88,9 +87,9 @@ export default function RefundPolicy() {
 
           {/* 4 */}
           <section>
-            <h2 className="text-xl font-semibold text-white mb-3">4. Annual Subscriptions</h2>
+            <h2 className="text-xl font-semibold text-white mb-3">4. Payment Method</h2>
             <p>
-              Annual subscriptions are billed as a single payment for 12 months of service. The 14-day refund window applies from the date of payment. After this window, no refunds are available for annual plans. You may contact us to discuss switching to a monthly plan for future billing periods.
+              Setup fees are invoiced and may be paid by bank transfer or another method we agree with you. If we enable card payment in the future, it will be handled by a third-party payment provider and the refund terms above will continue to apply.
             </p>
           </section>
 

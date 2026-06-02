@@ -48,8 +48,8 @@ export default function PrivacyPolicy() {
             <ul className="list-disc list-inside space-y-1 text-gray-400">
               <li>Name and email address</li>
               <li>Google account profile information (when using Google Sign-In)</li>
-              <li>Billing information (processed by Stripe; we do not store full payment card details)</li>
-              <li>Subscription plan and payment history</li>
+              <li>Billing information (we do not store full payment card details)</li>
+              <li>Setup fee and payment history</li>
             </ul>
 
             <h3 className="text-lg font-medium text-gray-200 mb-2 mt-4">1.2 Usage Data</h3>
@@ -74,7 +74,7 @@ export default function PrivacyPolicy() {
             <p className="mb-2">We use the information we collect to:</p>
             <ul className="list-disc list-inside space-y-1 text-gray-400">
               <li>Provide, operate, and maintain the Service</li>
-              <li>Process your subscription and payments</li>
+              <li>Process your setup fee and payments</li>
               <li>Send transactional emails (account confirmation, billing receipts, important updates)</li>
               <li>Improve, personalize, and optimize the Service</li>
               <li>Provide customer support and respond to inquiries</li>
@@ -108,7 +108,7 @@ export default function PrivacyPolicy() {
               We use the following third-party services to operate AgentLead. Each has its own privacy policy governing how it handles your data:
             </p>
             <ul className="list-disc list-inside space-y-2 text-gray-400">
-              <li><span className="text-gray-300">Stripe</span> — Payment processing. Stripe collects and processes your payment information. See <a href="https://stripe.com/privacy" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline">Stripe's Privacy Policy</a>.</li>
+              <li><span className="text-gray-300">Stripe</span> — Payment processing, used only if card payment is enabled. Stripe collects and processes your payment information. See <a href="https://stripe.com/privacy" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline">Stripe's Privacy Policy</a>.</li>
               <li><span className="text-gray-300">Supabase</span> — Backend infrastructure, database hosting, and authentication. See <a href="https://supabase.com/privacy" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline">Supabase's Privacy Policy</a>.</li>
               <li><span className="text-gray-300">Google APIs</span> — Used for Google Sign-In authentication. See <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline">Google's Privacy Policy</a>.</li>
               <li><span className="text-gray-300">SendGrid</span> — Transactional and marketing email delivery. See <a href="https://www.twilio.com/legal/privacy" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline">Twilio/SendGrid's Privacy Policy</a>.</li>
