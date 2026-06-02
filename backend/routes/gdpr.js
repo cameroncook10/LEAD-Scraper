@@ -41,7 +41,6 @@ router.get('/export', gdprExportLimiter, async (req, res, next) => {
       notificationPrefsResult,
       outreachCredsResult,
       campaignsResult,
-      deliveriesResult,
     ] = await Promise.all([
       supabase.from('leads').select('*').eq('user_id', userId),
       supabase.from('scrape_jobs').select('*').eq('user_id', userId),
@@ -50,8 +49,18 @@ router.get('/export', gdprExportLimiter, async (req, res, next) => {
         'id, user_id, ig_business_id, fb_page_id, smtp_host, smtp_port, smtp_user, created_at, updated_at'
       ).eq('user_id', userId),
       supabase.from('email_campaigns').select('*').eq('user_id', userId),
-      supabase.from('campaign_deliveries').select('*').eq('user_id', userId),
     ]);
+
+    // campaign_deliveries has no user_id column — scope it via the user's campaigns
+    const exportCampaignIds = (campaignsResult.data || []).map(c => c.id);
+    let deliveries = [];
+    if (exportCampaignIds.length > 0) {
+      const { data } = await supabase
+        .from('campaign_deliveries')
+        .select('*')
+        .in('campaign_id', exportCampaignIds);
+      deliveries = data || [];
+    }
 
     const exportData = {
       exportedAt: new Date().toISOString(),
@@ -67,7 +76,7 @@ router.get('/export', gdprExportLimiter, async (req, res, next) => {
         return safe;
       }),
       emailCampaigns: campaignsResult.data || [],
-      campaignDeliveries: deliveriesResult.data || [],
+      campaignDeliveries: deliveries,
     };
 
     const filename = `gdpr-export-${userId}-${new Date().toISOString().split('T')[0]}.json`;
