@@ -325,4 +325,52 @@ router.get('/status', requireAuth, async (req, res) => {
   }
 });
 
+// GET /api/auth/connections — list connected providers for the Settings page
+router.get('/connections', requireAuth, async (req, res) => {
+  try {
+    const supabase = req.app.locals.supabase;
+    const { data, error } = await supabase
+      .from('outreach_credentials')
+      .select('*')
+      .eq('user_id', req.user.userId)
+      .single();
+
+    if (error && error.code !== 'PGRST116') throw error;
+
+    const connections = [];
+    if (data?.ig_access_token) connections.push({ provider: 'instagram', pageName: data.ig_business_id || null });
+    if (data?.fb_page_token)   connections.push({ provider: 'facebook',  pageName: data.fb_page_id || null });
+    res.json({ connections });
+  } catch (error) {
+    console.error('[OAuth] connections error:', error);
+    res.status(500).json({ error: 'Failed to load connections' });
+  }
+});
+
+// DELETE /api/auth/disconnect/:provider — clear a provider's stored credentials
+router.delete('/disconnect/:provider', requireAuth, async (req, res) => {
+  try {
+    const supabase = req.app.locals.supabase;
+    const patches = {
+      instagram: { ig_access_token: '', ig_business_id: '' },
+      facebook:  { fb_page_id: '', fb_page_token: '' },
+      google:    { smtp_host: '', smtp_user: '', smtp_pass: '' },
+      email:     { smtp_host: '', smtp_user: '', smtp_pass: '' },
+    };
+    const patch = patches[req.params.provider];
+    if (!patch) return res.status(400).json({ error: 'Unknown provider' });
+
+    const { error } = await supabase
+      .from('outreach_credentials')
+      .update({ ...patch, updated_at: new Date().toISOString() })
+      .eq('user_id', req.user.userId);
+
+    if (error) throw error;
+    res.json({ disconnected: req.params.provider });
+  } catch (error) {
+    console.error('[OAuth] disconnect error:', error);
+    res.status(500).json({ error: 'Failed to disconnect' });
+  }
+});
+
 export default router;

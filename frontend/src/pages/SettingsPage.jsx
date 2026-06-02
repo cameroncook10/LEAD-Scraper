@@ -53,7 +53,7 @@ export function SettingsPage() {
 
   const fetchConnections = async () => {
     try {
-      const res = await fetch(`${API_BASE}/api/auth/connections`, {
+      const res = await fetch(`${API_BASE}/auth/connections`, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
       const data = await res.json();
@@ -68,7 +68,7 @@ export function SettingsPage() {
   const handleConnect = async (provider) => {
     setConnectingProvider(provider);
     try {
-      const res = await fetch(`${API_BASE}/api/auth/${provider}/connect`, {
+      const res = await fetch(`${API_BASE}/auth/${provider}/connect`, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
       const data = await res.json();
@@ -83,7 +83,7 @@ export function SettingsPage() {
 
   const handleDisconnect = async (provider) => {
     try {
-      await fetch(`${API_BASE}/api/auth/disconnect/${provider}`, {
+      await fetch(`${API_BASE}/auth/disconnect/${provider}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${accessToken}` },
       });
