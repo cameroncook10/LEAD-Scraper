@@ -77,10 +77,22 @@ app.use(sanitizeInput);
 
 // ── Supabase client ────────────────────────────────────────────────────────────
 let supabase = null;
-if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
-  supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
+// The backend is a trusted server: prefer the service-role key so it can read/
+// write on behalf of authenticated users. Tenant isolation is enforced in-app by
+// filtering EVERY query on the authenticated user's id (req.user.userId). RLS is
+// kept on as defense-in-depth for any direct anon-key access. Falls back to the
+// anon key for local dev — but under RLS, anon queries return no rows, so a
+// service-role key is required in production for the app to function.
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
+if (process.env.SUPABASE_URL && SUPABASE_KEY) {
+  supabase = createClient(process.env.SUPABASE_URL, SUPABASE_KEY, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    logger.warn('Using SUPABASE_ANON_KEY — set SUPABASE_SERVICE_ROLE_KEY in production or backend queries will return no rows under RLS');
+  }
 } else {
-  logger.warn('SUPABASE_URL / SUPABASE_ANON_KEY not set — Supabase features disabled');
+  logger.warn('SUPABASE_URL / key not set — Supabase features disabled');
 }
 export { supabase };
 app.locals.supabase = supabase;
@@ -125,10 +137,10 @@ app.use(apiLimiter);
 // ── Routes ────────────────────────────────────────────────────────────────────
 app.use('/api/scrape',               requireAuth, requirePlan('starter'), scrapeLimiter, scrapeRoutes);
 app.use('/api/leads',                requireAuth, requireSubscription, leadsRoutes);
-app.use('/api/jobs',                 jobsRoutes);
+app.use('/api/jobs',                 requireAuth, jobsRoutes);
 app.use('/api/industries',           industriesRoutes);
-app.use('/api/analytics',            analyticsRoutes);
-app.use('/api/webhooks',             webhooksRoutes);
+app.use('/api/analytics',            requireAuth, analyticsRoutes);
+app.use('/api/webhooks',             requireAuth, webhooksRoutes);
 app.use('/api/workflows',            requireAuth, workflowRoutes);
 app.use('/api/auth',                 socialAuthRoutes);
 app.use('/api/outreach',             requireAuth, requirePlan('starter'), outreachRoutes);

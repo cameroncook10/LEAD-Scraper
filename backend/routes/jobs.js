@@ -11,7 +11,8 @@ router.get('/', async (req, res, next) => {
 
     let query = supabase
       .from('scrape_jobs')
-      .select('*');
+      .select('*')
+      .eq('user_id', req.user.userId);
 
     if (status) {
       query = query.eq('status', status);
@@ -43,7 +44,8 @@ router.get('/:jobId', async (req, res, next) => {
       .from('scrape_jobs')
       .select('*')
       .eq('id', jobId)
-      .single();
+      .eq('user_id', req.user.userId)
+      .maybeSingle();
 
     if (jobError) throw jobError;
     if (!job) {

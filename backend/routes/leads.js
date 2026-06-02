@@ -13,7 +13,8 @@ router.get('/stats/summary', async (req, res, next) => {
   try {
     const { data, error } = await req.app.locals.supabase
       .from('leads')
-      .select('id, ai_score, ai_category, source');
+      .select('id, ai_score, ai_category, source')
+      .eq('user_id', req.user.userId);
 
     if (error) throw error;
 
@@ -140,8 +141,14 @@ router.get('/', async (req, res, next) => {
                  .lte('ai_score', parseInt(maxScore));
 
     if (search) {
-      // Sanitize search to prevent ilike injection
-      const sanitized = search.replace(/%/g, '\\%').replace(/_/g, '\\_');
+      // Neutralize PostgREST .or() filter syntax (comma / parens / backslash
+      // would otherwise inject extra conditions), then escape LIKE wildcards.
+      // Combined with the user_id .eq() above this prevents filter injection.
+      const sanitized = String(search)
+        .replace(/[,()\\]/g, ' ')
+        .replace(/%/g, '\\%')
+        .replace(/_/g, '\\_')
+        .slice(0, 100);
       query = query.or(`name.ilike.%${sanitized}%,email.ilike.%${sanitized}%,phone.ilike.%${sanitized}%`);
     }
 
@@ -265,7 +272,8 @@ router.delete('/:id', async (req, res, next) => {
     const { error } = await req.app.locals.supabase
       .from('leads')
       .delete()
-      .eq('id', id);
+      .eq('id', id)
+      .eq('user_id', userId);
 
     if (error) throw error;
 

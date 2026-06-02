@@ -37,14 +37,16 @@ router.get('/status/:jobId', async (req, res, next) => {
     const supabase = req.app.locals.supabase;
     if (!supabase) return res.status(503).json({ error: 'Database not configured' });
 
-    // Get job status
+    // Get job status (scoped to the authenticated user)
     const { data: jobData, error: jobError } = await supabase
       .from('scrape_jobs')
       .select('*')
       .eq('id', jobId)
-      .single();
+      .eq('user_id', req.user.userId)
+      .maybeSingle();
 
     if (jobError) throw jobError;
+    if (!jobData) return res.status(404).json({ error: 'Job not found' });
 
     // Get job logs
     const { data: logs, error: logsError } = await supabase
@@ -77,6 +79,7 @@ router.get('/jobs', async (req, res, next) => {
     const { data, error } = await supabase
       .from('scrape_jobs')
       .select('*')
+      .eq('user_id', req.user.userId)
       .order('created_at', { ascending: false })
       .limit(50);
 

@@ -56,6 +56,17 @@ These were real bugs/blockers that are now fixed in the repo:
   billing, messaging, queue, and preferences tables the app queries but that no
   migration created (including `notification_preferences` and `dead_letter_queue`,
   which were missing entirely). `supabase/migrations/20240102000000_billing_messaging_prefs.sql`
+- **Security pass (multi-tenant isolation)** — the backend now uses the
+  service-role key and **every** data query is scoped to the authenticated user.
+  Fixed real cross-tenant exposures: `/api/jobs`, `/api/analytics`, `/api/webhooks`
+  were unauthenticated; jobs/scrape status, lead delete, lead stats and analytics
+  didn't filter by `user_id`. Added SSRF protection on customer webhook URLs
+  (blocks localhost / private / cloud-metadata hosts), HMAC-signed OAuth `state`
+  (prevents social-account-takeover), and hardened the leads search filter against
+  PostgREST injection. `server.js`, `routes/{jobs,scrape,analytics,leads,webhooks,socialAuth}.js`
+- **Deploy workflow** — `deploy.yml` used the `secrets` context in a job-level
+  `if:` (invalid → the run failed at 0s on every push). Switched it to manual
+  (`workflow_dispatch`) and fixed the gate; this stops the red ✗ on pushes.
 
 ---
 
@@ -67,6 +78,9 @@ Create these accounts and collect the keys. Put backend keys in your host's env
 ### 1. Supabase (database + auth)
 - [ ] Create a project at supabase.com → **Settings → API** copy:
   - `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
+    (**`SUPABASE_SERVICE_ROLE_KEY` is now required** — the backend uses it for all
+    queries; without it, RLS makes every query return zero rows and the app looks
+    empty/broken. Keep this key server-side only, never in the frontend.)
   - For the frontend: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
 - [ ] **Auth → Providers → Google**: enable Google OAuth (login is Google-based).
       Add your production domain to **Auth → URL Configuration → Redirect URLs**

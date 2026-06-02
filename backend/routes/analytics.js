@@ -28,6 +28,7 @@ router.get('/overview', async (req, res) => {
         const { data: leads } = await supabase
           .from('leads')
           .select('id, score, status, created_at')
+          .eq('user_id', req.user.userId)
           .gte('created_at', since);
 
         if (leads) {

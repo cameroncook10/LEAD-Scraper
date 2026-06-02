@@ -1,9 +1,14 @@
 name: Deploy to Production
 
 on:
-  push:
-    branches: [main]
-    tags: ["v*.*.*"]
+  # Manual trigger only. This avoided the run failing on every push before the
+  # Vercel/SSH deploy secrets exist. Vercel's native Git integration already
+  # auto-deploys the frontend on push. Re-enable the push trigger below once
+  # VERCEL_TOKEN / VERCEL_ORG_ID / VERCEL_PROJECT_ID are set as repo secrets.
+  workflow_dispatch:
+  # push:
+  #   branches: [main]
+  #   tags: ["v*.*.*"]
 
 concurrency:
   group: production
@@ -43,8 +48,10 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     needs: deploy-vercel
-    # Only runs if SSH secrets are set (optional path for self-hosted)
-    if: ${{ secrets.DEPLOY_SSH_KEY != '' }}
+    # The `secrets` context is NOT allowed in a job-level `if:` (that made the
+    # whole workflow fail to start). Gate on a repo variable instead — set
+    # ENABLE_BACKEND_DEPLOY=true in repo Variables to enable this self-hosted path.
+    if: ${{ vars.ENABLE_BACKEND_DEPLOY == 'true' }}
     steps:
       - uses: actions/checkout@v4
 

@@ -17,8 +17,40 @@
  *   GET  /api/auth/status              → Connection status for all providers
  */
 import express from 'express';
+import crypto from 'crypto';
+import { requireAuth } from '../middleware/auth.js';
 
 const router = express.Router();
+
+// ── Signed OAuth state ───────────────────────────────────────────────────────
+// The callback runs WITHOUT the user's session (it's a browser redirect from
+// Meta/Google), so it must learn the user id from the `state` param. We HMAC-sign
+// state at connect time and verify it on callback — otherwise an attacker could
+// forge state and bind their social account (or token) to a victim's account.
+const STATE_SECRET = process.env.JWT_SECRET || process.env.ENCRYPTION_KEY || 'insecure-dev-oauth-state-secret';
+const STATE_TTL_MS = 60 * 60 * 1000; // 1 hour
+
+function signState(userId) {
+  const payload = Buffer.from(JSON.stringify({ u: userId, t: Date.now() })).toString('base64url');
+  const sig = crypto.createHmac('sha256', STATE_SECRET).update(payload).digest('base64url');
+  return `${payload}.${sig}`;
+}
+
+function verifyState(state) {
+  if (typeof state !== 'string' || !state.includes('.')) return null;
+  const [payload, sig] = state.split('.');
+  const expected = crypto.createHmac('sha256', STATE_SECRET).update(payload).digest('base64url');
+  const sigBuf = Buffer.from(sig);
+  const expBuf = Buffer.from(expected);
+  if (sigBuf.length !== expBuf.length || !crypto.timingSafeEqual(sigBuf, expBuf)) return null;
+  try {
+    const { u, t } = JSON.parse(Buffer.from(payload, 'base64url').toString());
+    if (!u || typeof t !== 'number' || Date.now() - t > STATE_TTL_MS) return null;
+    return u;
+  } catch {
+    return null;
+  }
+}
 
 const META_AUTH_URL = 'https://www.facebook.com/v21.0/dialog/oauth';
 const META_TOKEN_URL = 'https://graph.facebook.com/v21.0/oauth/access_token';
@@ -33,12 +65,12 @@ const getFrontendUrl = () => process.env.FRONTEND_URL || 'http://localhost:3001'
 // Instagram OAuth
 // ═══════════════════════════════════════
 
-router.get('/instagram/connect', (req, res) => {
+router.get('/instagram/connect', requireAuth, (req, res) => {
   const appId = process.env.META_APP_ID;
   if (!appId) return res.status(500).json({ error: 'META_APP_ID not configured. Set it in backend/.env' });
 
   const redirectUri = `${getAppUrl()}/api/auth/instagram/callback`;
-  const state = Buffer.from(JSON.stringify({ userId: req.query.userId || 'default' })).toString('base64');
+  const state = signState(req.user.userId);
 
   const scopes = [
     'instagram_basic',
@@ -59,7 +91,10 @@ router.get('/instagram/callback', async (req, res) => {
   }
 
   try {
-    const { userId } = JSON.parse(Buffer.from(state, 'base64').toString());
+    const userId = verifyState(state);
+    if (!userId) {
+      return res.redirect(`${getFrontendUrl()}/dashboard?tab=Settings&error=invalid_state`);
+    }
     const supabase = req.app.locals.supabase;
 
     // 1. Exchange code for short-lived token
@@ -110,12 +145,12 @@ router.get('/instagram/callback', async (req, res) => {
 // Facebook OAuth
 // ═══════════════════════════════════════
 
-router.get('/facebook/connect', (req, res) => {
+router.get('/facebook/connect', requireAuth, (req, res) => {
   const appId = process.env.META_APP_ID;
   if (!appId) return res.status(500).json({ error: 'META_APP_ID not configured. Set it in backend/.env' });
 
   const redirectUri = `${getAppUrl()}/api/auth/facebook/callback`;
-  const state = Buffer.from(JSON.stringify({ userId: req.query.userId || 'default' })).toString('base64');
+  const state = signState(req.user.userId);
 
   const scopes = [
     'pages_show_list',
@@ -135,7 +170,10 @@ router.get('/facebook/callback', async (req, res) => {
   }
 
   try {
-    const { userId } = JSON.parse(Buffer.from(state, 'base64').toString());
+    const userId = verifyState(state);
+    if (!userId) {
+      return res.redirect(`${getFrontendUrl()}/dashboard?tab=Settings&error=invalid_state`);
+    }
     const supabase = req.app.locals.supabase;
 
     // Exchange for token
@@ -185,12 +223,12 @@ router.get('/facebook/callback', async (req, res) => {
 // Google OAuth (Gmail SMTP)
 // ═══════════════════════════════════════
 
-router.get('/google/connect', (req, res) => {
+router.get('/google/connect', requireAuth, (req, res) => {
   const clientId = process.env.GOOGLE_CLIENT_ID;
   if (!clientId) return res.status(500).json({ error: 'GOOGLE_CLIENT_ID not configured. Set it in backend/.env' });
 
   const redirectUri = `${getAppUrl()}/api/auth/google/callback`;
-  const state = Buffer.from(JSON.stringify({ userId: req.query.userId || 'default' })).toString('base64');
+  const state = signState(req.user.userId);
 
   const params = new URLSearchParams({
     client_id: clientId,
@@ -213,7 +251,10 @@ router.get('/google/callback', async (req, res) => {
   }
 
   try {
-    const { userId } = JSON.parse(Buffer.from(state, 'base64').toString());
+    const userId = verifyState(state);
+    if (!userId) {
+      return res.redirect(`${getFrontendUrl()}/dashboard?tab=Settings&error=invalid_state`);
+    }
     const supabase = req.app.locals.supabase;
 
     // Exchange code for tokens
@@ -261,10 +302,10 @@ router.get('/google/callback', async (req, res) => {
 // Connection Status
 // ═══════════════════════════════════════
 
-router.get('/status', async (req, res) => {
+router.get('/status', requireAuth, async (req, res) => {
   try {
     const supabase = req.app.locals.supabase;
-    const userId = req.query.userId || 'default';
+    const userId = req.user.userId;
 
     const { data, error } = await supabase
       .from('outreach_credentials')
