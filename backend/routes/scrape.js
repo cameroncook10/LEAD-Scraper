@@ -7,16 +7,17 @@ const router = express.Router();
 router.post('/start', async (req, res, next) => {
   try {
     const { source, query, limit = 100 } = req.body;
+    const userId = req.user.userId;
 
     if (!source) {
       return res.status(400).json({ error: 'Source is required' });
     }
 
-    // Create job
-    const job = await createScrapeJob(source, query, limit);
+    // Create job (owned by the authenticated user)
+    const job = await createScrapeJob(source, query, limit, userId);
 
     // Start job asynchronously (don't wait for it to complete)
-    startScrapeJob(job.id, source, query, limit).catch(error => {
+    startScrapeJob(job.id, source, query, limit, userId).catch(error => {
       console.error('Background scrape error:', error);
     });
 

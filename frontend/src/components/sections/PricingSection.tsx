@@ -1,135 +1,30 @@
-import React, { useState } from "react";
+import React from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Check, Sparkles, Loader2 } from "lucide-react";
-import { createStripeCheckout } from "../../services/api";
+import { Check, Sparkles, ArrowRight } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
-import { savePendingCheckout } from "../../lib/checkout";
 
-const plans = [
-  {
-    name: "Starter",
-    key: "starter",
-    monthlyPrice: "$497",
-    annualPrice: "$397",
-    period: "/month",
-    description: "For solo contractors & small businesses getting started with automation.",
-    featured: false,
-    cta: "Buy Now",
-    mesh: "mesh-blue",
-    features: [
-      "5,000 leads per month",
-      "Auto DM — 500 messages/mo",
-      "Auto Comment — 1,000/mo",
-      "AI lead qualification",
-      "Basic analytics dashboard",
-      "Email support",
-      "CSV export",
-    ],
-  },
-  {
-    name: "Growth",
-    key: "growth",
-    monthlyPrice: "$2,000",
-    annualPrice: "$1,600",
-    period: "/month",
-    description: "For growing businesses ready to scale outreach and dominate their market.",
-    featured: true,
-    cta: "Buy Now",
-    badge: "Most Popular",
-    mesh: "mesh-cyan",
-    features: [
-      "Unlimited lead scraping",
-      "Auto DM — Unlimited messages",
-      "Auto Comment — Unlimited",
-      "AI lead qualification + scoring",
-      "Advanced analytics & A/B testing",
-      "CRM integration (GoHighLevel, HubSpot)",
-      "Priority support — 15 min SLA",
-      "Custom outreach templates",
-      "Dedicated account manager",
-    ],
-  },
-  {
-    name: "Enterprise",
-    key: "enterprise",
-    monthlyPrice: "Custom",
-    annualPrice: "Custom",
-    period: "",
-    description: "For agencies & large organizations managing multiple client accounts.",
-    featured: false,
-    cta: "Contact Sales",
-    mesh: "mesh-violet",
-    features: [
-      "Everything in Growth",
-      "Multi-client management",
-      "White-label dashboards",
-      "Custom API integrations",
-      "SSO & advanced security",
-      "SLA guarantee — 99.9% uptime",
-      "Dedicated success team",
-      "Custom AI model training",
-    ],
-  },
-];
-
-// Self-serve Stripe checkout is enabled only once a real publishable key is set.
-// Until then (e.g. while clients pay by wire) the plan CTAs route to sales.
-const STRIPE_PK = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "";
-const STRIPE_ENABLED = !!STRIPE_PK && !STRIPE_PK.includes("placeholder");
 const SALES_EMAIL = import.meta.env.VITE_CONTACT_EMAIL || "sales@agentlead.io";
 
+const INCLUDED = [
+  "Unlimited lead scraping — Google Maps, Yelp, Instagram & Facebook",
+  "AI lead qualification & scoring",
+  "Automated DM, email & SMS outreach",
+  "Done-for-you scraper & campaign setup",
+  "Analytics & ROI dashboard",
+  "CRM-ready export (CSV, GoHighLevel, HubSpot)",
+  "Priority onboarding & support",
+];
+
 export function PricingSection() {
-  const [isAnnual, setIsAnnual] = useState(false);
-  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
 
-  const handleCheckout = async (plan: typeof plans[0]) => {
-    if (plan.key === "enterprise") {
-      window.location.href = `mailto:${SALES_EMAIL}?subject=Enterprise%20Plan%20Inquiry`;
-      return;
-    }
-
-    // Pre-Stripe (clients paying by wire): send prospects to sales instead of a
-    // checkout that can't complete yet.
-    if (!STRIPE_ENABLED) {
-      window.location.href =
-        `mailto:${SALES_EMAIL}?subject=${encodeURIComponent(`${plan.name} plan — getting started`)}`;
-      return;
-    }
-
-    // Signup-first: anonymous visitors sign in, then CheckoutResume completes
-    // the purchase once authenticated so the subscription links to a real user.
-    if (!isAuthenticated) {
-      savePendingCheckout(plan.key, isAnnual);
-      navigate("/login");
-      return;
-    }
-
-    setLoadingPlan(plan.key);
-    try {
-      const { url } = await createStripeCheckout(plan.key, isAnnual);
-      if (url) {
-        window.location.href = url;
-      } else {
-        throw new Error("No checkout URL returned");
-      }
-    } catch (err: any) {
-      console.error("Checkout error:", err);
-      alert(
-        err?.response?.data?.error ||
-          err.message ||
-          "Unable to start checkout. Please try again."
-      );
-    } finally {
-      setLoadingPlan(null);
-    }
-  };
+  const getStarted = () => navigate(isAuthenticated ? "/dashboard" : "/login");
 
   return (
     <section id="pricing" className="relative py-28 px-6">
-      <div className="relative max-w-7xl mx-auto">
+      <div className="relative max-w-4xl mx-auto">
         {/* Section header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -138,110 +33,65 @@ export function PricingSection() {
           transition={{ duration: 0.6 }}
           className="text-center mb-12"
         >
-          <span className="badge-cyan mb-4 inline-block">Pricing</span>
+          <span className="badge-cyan mb-4 inline-block">Get Started</span>
           <h2 className="text-display text-4xl md:text-5xl lg:text-6xl mb-4">
-            <span className="gradient-text-subtle">Simple, Transparent </span>
-            <span className="gradient-text-cyan">Pricing</span>
+            <span className="gradient-text-subtle">Done-for-you </span>
+            <span className="gradient-text-cyan">lead generation</span>
           </h2>
           <p className="text-gray-500 text-lg max-w-2xl mx-auto font-light">
-            Choose the plan that fits your business. Cancel anytime.
+            One simple setup fee. We configure your scrapers, AI qualification, and
+            outreach for your market — you get qualified leads on autopilot. No
+            per-seat pricing, no monthly tiers to manage.
           </p>
         </motion.div>
 
-        {/* Billing toggle */}
-        <div className="flex items-center justify-center gap-4 mb-14">
-          <span className={`text-sm font-medium transition-colors ${!isAnnual ? 'text-white' : 'text-gray-500'}`}>Monthly</span>
-          <button
-            onClick={() => setIsAnnual(!isAnnual)}
-            className="relative w-14 h-7 rounded-full transition-colors duration-300"
-            style={{
-              background: isAnnual
-                ? 'linear-gradient(135deg, rgba(6,182,212,0.6), rgba(59,130,246,0.6))'
-                : 'rgba(255,255,255,0.1)',
-            }}
-          >
-            <motion.div
-              animate={{ x: isAnnual ? 26 : 2 }}
-              transition={{ type: "spring", stiffness: 500, damping: 30 }}
-              className="absolute top-1 w-5 h-5 rounded-full bg-white shadow-md"
-            />
-          </button>
-          <span className={`text-sm font-medium transition-colors ${isAnnual ? 'text-white' : 'text-gray-500'}`}>
-            Annual
-            <span className="ml-1.5 text-xs text-emerald-400 font-bold">Save 20%</span>
-          </span>
-        </div>
+        {/* Single offer card */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="mesh-cyan liquid-border rounded-3xl p-8 md:p-12"
+        >
+          <div className="flex flex-col items-center text-center mb-8">
+            <div className="inline-flex items-center gap-1.5 px-4 py-1 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-full text-xs font-bold shadow-lg shadow-cyan-500/30 mb-5">
+              <Sparkles className="w-3 h-3" />
+              One-time setup
+            </div>
+            <span className="text-4xl md:text-5xl font-black text-white">
+              Custom setup fee
+            </span>
+            <p className="text-gray-500 mt-3 max-w-md">
+              Priced to your market and lead volume. Book a quick call and we'll
+              scope it with you.
+            </p>
+          </div>
 
-        {/* Pricing grid */}
-        <div className="grid md:grid-cols-3 gap-5 lg:gap-6 items-start">
-          {plans.map((plan, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: i * 0.12 }}
-              viewport={{ once: true }}
-              className={`relative rounded-2xl p-7 transition-all duration-500 ${
-                plan.featured
-                  ? `${plan.mesh} liquid-border md:scale-[1.03] md:-my-3`
-                  : `${plan.mesh} border border-white/[0.04]`
-              }`}
+          <ul className="grid sm:grid-cols-2 gap-3 mb-10 max-w-2xl mx-auto">
+            {INCLUDED.map((feature, i) => (
+              <li key={i} className="flex items-start gap-2.5">
+                <Check className="w-4 h-4 flex-shrink-0 mt-0.5 text-cyan-400" />
+                <span className="text-gray-400 text-sm">{feature}</span>
+              </li>
+            ))}
+          </ul>
+
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <button
+              onClick={getStarted}
+              className="btn-primary px-8 py-4 text-base rounded-xl flex items-center justify-center gap-2"
             >
-              {plan.badge && (
-                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-10">
-                  <div className="flex items-center gap-1.5 px-4 py-1 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-full text-xs font-bold shadow-lg shadow-cyan-500/30 animate-glow">
-                    <Sparkles className="w-3 h-3" />
-                    {plan.badge}
-                  </div>
-                </div>
-              )}
-
-              <h3 className="text-xl font-bold text-white mb-1.5">{plan.name}</h3>
-              <p className="text-gray-500 text-sm mb-5">{plan.description}</p>
-
-              <div className="mb-6">
-                <span className="text-4xl font-black text-white">
-                  {isAnnual ? plan.annualPrice : plan.monthlyPrice}
-                </span>
-                <span className="text-gray-500 text-base">{plan.period}</span>
-              </div>
-
-              <button
-                onClick={() => handleCheckout(plan)}
-                disabled={loadingPlan === plan.key}
-                className={`w-full py-3 rounded-xl font-semibold text-sm transition-all duration-300 mb-7 flex items-center justify-center gap-2 ${
-                  plan.featured
-                    ? "bg-gradient-to-r from-cyan-500 to-blue-500 text-white hover:shadow-lg hover:shadow-cyan-500/25"
-                    : "bg-white/5 hover:bg-white/10 text-white border border-white/[0.06] hover:border-white/[0.12]"
-                } ${loadingPlan === plan.key ? "opacity-70 cursor-not-allowed" : ""}`}
-              >
-                {loadingPlan === plan.key ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Redirecting to checkout...
-                  </>
-                ) : (
-                  plan.cta
-                )}
-              </button>
-
-              {plan.key !== "enterprise" && (
-                <p className="text-center text-xs text-gray-600 -mt-4 mb-5">
-                  Cancel anytime • Instant access after purchase
-                </p>
-              )}
-
-              <ul className="space-y-2.5">
-                {plan.features.map((feature, j) => (
-                  <li key={j} className="flex items-start gap-2.5">
-                    <Check className={`w-4 h-4 flex-shrink-0 mt-0.5 ${plan.featured ? "text-cyan-400" : "text-gray-600"}`} />
-                    <span className="text-gray-400 text-sm">{feature}</span>
-                  </li>
-                ))}
-              </ul>
-            </motion.div>
-          ))}
-        </div>
+              Get Started
+              <ArrowRight className="w-4 h-4" />
+            </button>
+            <a
+              href={`mailto:${SALES_EMAIL}?subject=${encodeURIComponent("Agent Lead — setup call")}`}
+              className="btn-ghost px-8 py-4 text-base rounded-xl flex items-center justify-center"
+            >
+              Book a setup call
+            </a>
+          </div>
+        </motion.div>
       </div>
     </section>
   );

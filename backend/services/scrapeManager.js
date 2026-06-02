@@ -13,7 +13,7 @@ const scrapers = {
   web_search: scrapeWebSearch
 };
 
-export const createScrapeJob = async (source, query, limit = 100) => {
+export const createScrapeJob = async (source, query, limit = 100, userId = null) => {
   if (!supabase) throw new Error('Supabase is not configured');
 
   try {
@@ -23,7 +23,9 @@ export const createScrapeJob = async (source, query, limit = 100) => {
       .from('scrape_jobs')
       .insert({
         id: jobId,
+        user_id: userId,
         source,
+        query,
         status: 'pending',
         total_leads: 0,
         processed_leads: 0
@@ -39,7 +41,7 @@ export const createScrapeJob = async (source, query, limit = 100) => {
   }
 };
 
-export const startScrapeJob = async (jobId, source, query, limit = 100) => {
+export const startScrapeJob = async (jobId, source, query, limit = 100, userId = null) => {
   try {
     // Update job status to running
     await supabase
@@ -78,13 +80,25 @@ export const startScrapeJob = async (jobId, source, query, limit = 100) => {
         .eq('id', jobId);
     });
 
-    // Store qualified leads in database
+    // Store qualified leads in database, tagged with the owning user so they
+    // show up under that account's tenant-scoped queries. Whitelist columns so
+    // extra fields from any scraper (rating, price_level, …) can't break insert.
     if (qualifiedLeads.length > 0) {
-      const { error: insertError } = await supabase
-        .from('leads')
-        .insert(qualifiedLeads);
+      const LEAD_COLUMNS = ['name', 'phone', 'email', 'website', 'address', 'business_type', 'source', 'ai_score', 'ai_category', 'ai_confidence', 'raw_data', 'tags', 'notes'];
+      const leadsToInsert = qualifiedLeads
+        .filter(l => l && l.name)            // name is NOT NULL in the schema
+        .map(l => {
+          const row = { user_id: userId };
+          for (const k of LEAD_COLUMNS) if (l[k] !== undefined) row[k] = l[k];
+          return row;
+        });
 
-      if (insertError) throw insertError;
+      if (leadsToInsert.length > 0) {
+        const { error: insertError } = await supabase
+          .from('leads')
+          .insert(leadsToInsert);
+        if (insertError) throw insertError;
+      }
     }
 
     // Mark job as complete

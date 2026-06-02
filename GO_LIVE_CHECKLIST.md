@@ -9,7 +9,14 @@ Last reviewed: 2026-05-31. Everything in "Already done in code" below is committ
 
 ---
 
-## 0. Running now, before Stripe (clients paying by wire)
+## 0. Pricing model: one-time setup fee (no Stripe needed)
+
+The landing page no longer shows monthly/annual plans — it presents a single
+"Custom setup fee" offer with **Get Started** (→ sign in) and **Book a setup call**
+(→ your `VITE_CONTACT_EMAIL`) CTAs. You collect the setup fee out-of-band (wire /
+invoice), then grant the client access with `MANUAL_ACCESS_EMAILS` (below). The
+Stripe code is dormant and can be ignored or enabled later. You can fully run the
+business without ever configuring Stripe.
 
 You don't need Stripe to go live. Right now:
 
