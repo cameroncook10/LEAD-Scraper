@@ -170,9 +170,14 @@ supabase secrets set STRIPE_SECRET_KEY=sk_live_... FRONTEND_URL=https://yourdoma
 
 ---
 
-## D. ✅ Checkout / signup flow — DONE (signup-first)
+## D. Checkout / signup flow — built but DORMANT
 
-This is now wired. Anonymous visitors who click a paid plan are sent to `/login`,
+> Under the current setup-fee model the landing page has no paid-plan buttons, so
+> this checkout path is not triggered. It remains in the code intact, so if you
+> ever switch to self-serve Stripe billing you can re-enable it by adding plan
+> buttons back. Everything below describes that dormant path.
+
+This is wired. Anonymous visitors who click a paid plan are sent to `/login`,
 their plan choice is stashed, and after Google sign-in `CheckoutResume` runs the
 **authenticated** backend checkout (`/api/stripe/create-checkout`) — so every
 subscription is created against a real user and the webhook links it reliably.
@@ -188,20 +193,17 @@ your backend, so the backend must be deployed and reachable for billing to work.
 
 ---
 
-## E. Known partial features (non-blocking)
+## E. Notes (non-blocking)
 
-- **Settings → social account connections** (`frontend/src/pages/SettingsPage.jsx`)
-  calls backend routes that don't exist yet (`/connections`, `/disconnect/:provider`);
-  the backend exposes `/api/auth/status` and `/api/auth/<provider>/connect`
-  instead. The Instagram/Facebook **scraping/DM** features work; this *settings UI*
-  for managing OAuth connections needs the routes aligned + a real Meta app. Say
-  the word and I'll finish it.
-- **`.github/workflows/build-desktop.yml`** references a `desktop/` directory that
-  doesn't exist (the project ships a `mobile/` Expo app instead). It only runs on
-  `v*` tags, so it's harmless until you cut a tagged release — delete it or point
-  it at `mobile/` before tagging.
-- **Trial-ending reminder email** is logged but not sent (`stripe-webhooks.js`
-  `handleTrialWillEnd`) — wire it to your email provider when ready.
+- **Social DM "Connect account" OAuth** (Instagram/Facebook/Google in Settings)
+  is fully wired (connect/status/connections/disconnect, signed OAuth state), but
+  only works once you create a Meta/Google OAuth app and set `META_APP_ID/SECRET`
+  / `GOOGLE_CLIENT_ID/SECRET`. Until then, clients can paste credentials manually
+  in the dashboard Settings tab (that path works with no OAuth app).
+- **Calendly**: set `VITE_CALENDLY_URL` in Vercel when ready and the "Book a setup
+  call" buttons point at it; until then they open a mailto.
+- The legacy `frontend/src/pages/Landing.jsx` and `DownloadPage.jsx` are not routed
+  (dead code) — safe to ignore or delete.
 
 ---
 
@@ -209,8 +211,10 @@ your backend, so the backend must be deployed and reachable for billing to work.
 
 1. [ ] `npm run install:all` then `npm run dev` — landing + dashboard load locally.
 2. [ ] Sign in with Google (against the real Supabase project).
-3. [ ] Run a scrape → leads appear → AI scores populate.
-4. [ ] Stripe **test mode**: complete a checkout → webhook fires → a row appears in
-       `subscriptions` with the correct `plan` → the paywall lifts for that user.
-5. [ ] Hit `https://<backend>/health` → `status: ok` with supabase `connected`.
-6. [ ] Flip Stripe + keys to live, redeploy, repeat step 4 once with a real card.
+3. [ ] Add your email to `MANUAL_ACCESS_EMAILS` → dashboard loads (no "Account
+       being set up" screen). Remove it → you should see that screen instead.
+4. [ ] Run a scrape → a job appears under your account → leads show up (AI scores
+       populate only if `ANTHROPIC_API_KEY` is set; otherwise category is
+       "unconfigured", which is expected).
+5. [ ] Create a template + campaign; connect an outreach channel; send a test.
+6. [ ] Hit `https://<backend>/health` → `status: ok` with supabase `connected`.

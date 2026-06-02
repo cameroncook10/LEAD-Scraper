@@ -26,7 +26,7 @@ export function Footer() {
               <li><a href="#features" className="hover:text-cyan-400 transition-colors">Features</a></li>
               <li><a href="#pricing" className="hover:text-cyan-400 transition-colors">Pricing</a></li>
               <li><a href="#how-it-works" className="hover:text-cyan-400 transition-colors">How It Works</a></li>
-              <li><a href="/download" className="hover:text-cyan-400 transition-colors">Desktop App</a></li>
+              <li><a href="#faq" className="hover:text-cyan-400 transition-colors">FAQ</a></li>
             </ul>
           </div>
 
