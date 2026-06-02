@@ -107,4 +107,10 @@ export const createStripePortal = async (sessionId) => {
   return response.data;
 };
 
+// Access probe — resolves if the user is activated, rejects (403) if not.
+export const getMe = async () => {
+  const response = await api.get('/me');
+  return response.data;
+};
+
 export default api;

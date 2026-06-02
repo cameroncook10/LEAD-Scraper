@@ -152,6 +152,13 @@ app.use('/api/templates',            requireAuth, templatesRoutes);
 app.use('/auth',                     authRoutes);
 app.use('/api/gdpr',                 requireAuth, gdprRoutes);
 
+// Lightweight access probe for the dashboard: 200 if the authenticated user may
+// use the app, 403 (code NO_ACCESS) if they're signed in but not yet activated
+// (pre-Stripe, not in MANUAL_ACCESS_EMAILS). Lets the UI show an activation screen.
+app.get('/api/me', requireAuth, requireSubscription, (req, res) => {
+  res.json({ ok: true, userId: req.user.userId, email: req.user.email });
+});
+
 // ── 404 handler ────────────────────────────────────────────────────────────────
 app.use((req, res) => {
   res.status(404).json({ error: 'Route not found', path: req.originalUrl });

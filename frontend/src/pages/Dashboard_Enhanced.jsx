@@ -8,8 +8,9 @@ import {
   ChevronDown, ChevronUp, Eye, Terminal
 } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { startScrape, getScrapeStatus, getJobs, getLeads, getLeadsStats, exportLeads, saveOutreachCredentials, loadOutreachCredentials } from '../services/api';
+import { startScrape, getScrapeStatus, getJobs, getLeads, getLeadsStats, exportLeads, saveOutreachCredentials, loadOutreachCredentials, getMe } from '../services/api';
 import { supabase } from '../lib/supabase';
+import { BOOK_CALL_HREF, bookCallLinkProps } from '../lib/contact';
 
 /* ════════════════════════════════════════════════
    DASHBOARD — Premium Glass Design System
@@ -229,8 +230,6 @@ function DashboardEnhanced() {
   const [connected, setConnected] = useState({ instagram: false, facebook: false, email: false });
   const [savingOutreach, setSavingOutreach] = useState(false);
   const [outreachMsg, setOutreachMsg] = useState(null);
-  const [promoCode, setPromoCode] = useState('');
-  const [promoError, setPromoError] = useState(false);
 
   // OAuth Connect via Supabase Auth (built-in providers)
   const handleOAuthConnect = async (provider) => {
@@ -284,18 +283,22 @@ function DashboardEnhanced() {
       setOutreachMsg({ type: 'error', text: `OAuth error: ${oauthError.replace(/_/g, ' ')}` });
     }
 
-    // Check subscription status
-    const paymentStatus = searchParams.get('payment');
-    if (paymentStatus === 'success') setHasSubscription(true);
   }, []);
 
-  // Subscription paywall
-  const [hasSubscription, setHasSubscription] = useState(() => {
-    return localStorage.getItem('agentlead_subscribed') === 'true';
-  });
+  // Access gate — the backend decides whether this signed-in user is activated.
+  const [access, setAccess] = useState('checking'); // 'checking' | 'granted' | 'denied'
   useEffect(() => {
-    if (hasSubscription) localStorage.setItem('agentlead_subscribed', 'true');
-  }, [hasSubscription]);
+    let cancelled = false;
+    getMe()
+      .then(() => { if (!cancelled) setAccess('granted'); })
+      .catch((err) => {
+        // 403 = authenticated but not activated yet. Any other error (network,
+        // 500) fails open so a transient issue never locks out a paying client —
+        // the per-route guards still enforce access server-side.
+        if (!cancelled) setAccess(err?.response?.status === 403 ? 'denied' : 'granted');
+      });
+    return () => { cancelled = true; };
+  }, []);
 
   const handleSaveOutreach = async () => {
     setSavingOutreach(true);
@@ -342,62 +345,36 @@ function DashboardEnhanced() {
 
   return (
     <div className="min-h-screen bg-[#050505] text-white flex overflow-hidden noise-overlay">
-      {/* ══════ SUBSCRIPTION PAYWALL ══════ */}
-      {!hasSubscription && (
+      {/* ══════ ACCESS GATE ══════ */}
+      {access === 'checking' && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#050505]">
+          <Loader2 className="w-10 h-10 animate-spin text-cyan-500" />
+        </div>
+      )}
+      {access === 'denied' && (
         <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(5,5,5,0.92)' }}>
           <div className="glass-liquid rounded-2xl p-10 max-w-md text-center border border-white/[0.06] shadow-2xl">
             <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center mx-auto mb-6">
               <Zap className="w-8 h-8 text-white" />
             </div>
-            <h2 className="text-2xl font-bold text-white mb-2">Subscription Required</h2>
+            <h2 className="text-2xl font-bold text-white mb-2">Account being set up</h2>
             <p className="text-gray-400 text-sm mb-6 leading-relaxed">
-              Get full access to lead scraping, AI qualification, auto-DMs, and all dashboard features. Purchase a plan to get started.
+              Your account isn't active yet. Once your setup is complete you'll have full
+              access to lead scraping, AI qualification, and outreach. Book a quick call
+              and we'll get you live.
             </p>
-            <button
-              onClick={() => navigate('/#pricing')}
-              className="w-full py-3 rounded-xl font-semibold text-sm bg-gradient-to-r from-cyan-500 to-blue-500 text-white hover:shadow-lg hover:shadow-cyan-500/25 transition-all duration-300 mb-3"
+            <a
+              href={BOOK_CALL_HREF}
+              {...bookCallLinkProps}
+              className="block w-full py-3 rounded-xl font-semibold text-sm bg-gradient-to-r from-cyan-500 to-blue-500 text-white hover:shadow-lg hover:shadow-cyan-500/25 transition-all duration-300 mb-3"
             >
-              View Plans & Subscribe
-            </button>
-
-            {/* Promo Code */}
-            <div className="mt-4 pt-4 border-t border-white/[0.06]">
-              <p className="text-xs text-gray-600 mb-2">Have a promo code?</p>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder="Enter promo code"
-                  value={promoCode}
-                  onChange={e => setPromoCode(e.target.value)}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter' && promoCode.toLowerCase().trim() === 'web') {
-                      setHasSubscription(true);
-                    }
-                  }}
-                  className="flex-1 glass rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan-500/50 border border-white/[0.06] placeholder-gray-600"
-                />
-                <button
-                  onClick={() => {
-                    if (promoCode.toLowerCase().trim() === 'web') {
-                      setHasSubscription(true);
-                    } else {
-                      setPromoError(true);
-                      setTimeout(() => setPromoError(false), 2000);
-                    }
-                  }}
-                  className="px-5 py-2.5 rounded-lg text-sm font-semibold bg-white/5 hover:bg-white/10 text-white border border-white/[0.06] transition"
-                >
-                  Apply
-                </button>
-              </div>
-              {promoError && <p className="text-xs text-red-400 mt-2">Invalid promo code</p>}
-            </div>
-
+              Book a setup call
+            </a>
             <button
-              onClick={() => window.open('https://agentlead.io', '_blank')}
-              className="w-full py-3 rounded-xl font-semibold text-sm bg-white/5 hover:bg-white/10 text-gray-400 border border-white/[0.06] transition-all duration-300 mt-3"
+              onClick={async () => { try { await supabase.auth.signOut(); } catch {} navigate('/'); }}
+              className="w-full py-3 rounded-xl font-semibold text-sm bg-white/5 hover:bg-white/10 text-gray-400 border border-white/[0.06] transition-all duration-300"
             >
-              ← Back to Site
+              Sign out
             </button>
           </div>
         </div>
