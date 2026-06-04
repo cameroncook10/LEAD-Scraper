@@ -113,4 +113,20 @@ export const getMe = async () => {
   return response.data;
 };
 
+// ── Realtor portfolio + lead qualification ──────────────────────────────────
+export const getRealtorProfile = async () => {
+  const response = await api.get('/realtor/profile');
+  return response.data;
+};
+
+export const saveRealtorProfile = async (profile) => {
+  const response = await api.put('/realtor/profile', profile);
+  return response.data;
+};
+
+export const qualifyRealtorLeads = async (opts = {}) => {
+  const response = await api.post('/realtor/qualify', opts);
+  return response.data;
+};
+
 export default api;

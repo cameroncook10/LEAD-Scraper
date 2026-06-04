@@ -22,6 +22,7 @@ import campaignsRoutes from './routes/campaigns.js';
 import templatesRoutes from './routes/templates.js';
 import authRoutes from './routes/authRoutes.js';
 import gdprRoutes from './routes/gdpr.js';
+import realtorRoutes from './routes/realtor.js';
 import { initializeDatabase } from './db/schema.js';
 import { startQueueProcessor } from './services/messageQueue.js';
 import { securityHeaders, enforceHttps, sanitizeInput } from './middleware/security.js';
@@ -151,6 +152,7 @@ app.use('/api/campaigns',            requireAuth, campaignsRoutes);
 app.use('/api/templates',            requireAuth, templatesRoutes);
 app.use('/auth',                     authRoutes);
 app.use('/api/gdpr',                 requireAuth, gdprRoutes);
+app.use('/api/realtor',              requireAuth, requireSubscription, realtorRoutes);
 
 // Lightweight access probe for the dashboard: 200 if the authenticated user may
 // use the app, 403 (code NO_ACCESS) if they're signed in but not yet activated

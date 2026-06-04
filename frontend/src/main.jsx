@@ -14,6 +14,7 @@ import CampaignsPage from './pages/CampaignsPage'
 import { SettingsPage } from './pages/SettingsPage'
 import TemplatesPage from './pages/TemplatesPage'
 import JobMonitor from './pages/JobMonitor'
+import RealtorPortfolio from './pages/RealtorPortfolio'
 import ErrorBoundary from './components/ErrorBoundary'
 import CookieConsent from './components/CookieConsent'
 import CheckoutResume from './components/CheckoutResume'
@@ -43,6 +44,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
             <Route path="/templates" element={<ProtectedRoute><TemplatesPage /></ProtectedRoute>} />
             <Route path="/jobs" element={<ProtectedRoute><JobMonitor /></ProtectedRoute>} />
+            <Route path="/portfolio" element={<ProtectedRoute><RealtorPortfolio /></ProtectedRoute>} />
 
             <Route path="*" element={<NotFound />} />
           </Routes>

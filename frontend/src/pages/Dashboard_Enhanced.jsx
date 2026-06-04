@@ -322,6 +322,7 @@ function DashboardEnhanced() {
     { name: 'Overview', icon: <BarChart3 className="w-5 h-5" /> },
     { name: 'Leads', icon: <Users className="w-5 h-5" /> },
     { name: 'Targeting', icon: <Target className="w-5 h-5" /> },
+    { name: 'Portfolio', icon: <TrendingUp className="w-5 h-5" />, route: '/portfolio' },
     { name: 'Campaigns', icon: <Zap className="w-5 h-5" /> },
     { name: 'Inbox', icon: <Inbox className="w-5 h-5" /> },
     { name: 'Analytics', icon: <Activity className="w-5 h-5" /> },
@@ -396,7 +397,7 @@ function DashboardEnhanced() {
           {tabs.map((tab) => (
             <button
               key={tab.name}
-              onClick={() => setActiveTab(tab.name)}
+              onClick={() => tab.route ? navigate(tab.route) : setActiveTab(tab.name)}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${
                 activeTab === tab.name 
                   ? 'glass-liquid liquid-border text-cyan-400 shadow-lg shadow-cyan-500/10' 
