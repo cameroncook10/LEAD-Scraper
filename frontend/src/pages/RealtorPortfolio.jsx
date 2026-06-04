@@ -6,7 +6,7 @@ import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Loader2, Sparkles, Target, TrendingUp } from 'lucide-react';
-import { getRealtorProfile, saveRealtorProfile, qualifyRealtorLeads } from '../services/api';
+import { getRealtorProfile, saveRealtorProfile, qualifyRealtorLeads, startScrape } from '../services/api';
 
 const list = (s) => (s || '').split(',').map(x => x.trim()).filter(Boolean);
 const csv = (a) => (Array.isArray(a) ? a.join(', ') : '');
@@ -78,13 +78,31 @@ export default function RealtorPortfolio() {
   const [msg, setMsg] = useState(null);
   const [results, setResults] = useState(null);
   const [aiUsed, setAiUsed] = useState(true);
+  const [scrapeLoc, setScrapeLoc] = useState('');
+  const [finding, setFinding] = useState(null); // 'buyer' | 'seller' | null
 
   useEffect(() => {
     getRealtorProfile()
-      .then(({ profile }) => setForm(fromProfile(profile)))
+      .then(({ profile }) => {
+        const f = fromProfile(profile);
+        setForm(f);
+        setScrapeLoc(list(f.marketAreas)[0] || '');
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
+
+  const findProspects = async (intent) => {
+    const loc = (scrapeLoc || list(form.marketAreas)[0] || '').trim();
+    if (!loc) { setMsg({ type: 'err', text: 'Enter a location (or add a market area) to find prospects.' }); return; }
+    setFinding(intent); setMsg(null);
+    try {
+      await startScrape(intent === 'seller' ? 'seller_leads' : 'buyer_leads', loc, 50);
+      setMsg({ type: 'ok', text: `Finding ${intent === 'seller' ? 'sellers (FSBO)' : 'buyers'} in ${loc}. This runs in the background — give it a minute, then click "Save & score my leads".` });
+    } catch (e) {
+      setMsg({ type: 'err', text: e?.response?.data?.error || e?.response?.data?.message || 'Failed to start search.' });
+    } finally { setFinding(null); }
+  };
 
   const setBuyer = (k, v) => setForm(f => ({ ...f, buyer: { ...f.buyer, [k]: v } }));
   const setSeller = (k, v) => setForm(f => ({ ...f, seller: { ...f.seller, [k]: v } }));
@@ -189,6 +207,23 @@ export default function RealtorPortfolio() {
           <label className={labelCls}>Describe your ideal client (freeform — the AI reads this)</label>
           <textarea value={form.idealClient} onChange={e => setForm(f => ({ ...f, idealClient: e.target.value }))} rows={3} className={inputCls}
             placeholder="I work best with first-time buyers in the $300-500k range in central Austin, and downsizing sellers with paid-off homes." />
+        </div>
+
+        {/* Find prospects */}
+        <div className="glass-liquid rounded-2xl p-6 mb-6">
+          <h2 className="font-semibold text-white mb-1">Find prospects</h2>
+          <p className="text-gray-500 text-sm mb-4">Pull fresh buyer/seller leads from public listings (FSBO + housing-wanted) for a market, then score them below.</p>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <input value={scrapeLoc} onChange={e => setScrapeLoc(e.target.value)} placeholder="Austin TX" className={`${inputCls} sm:max-w-xs`} />
+            <button onClick={() => findProspects('seller')} disabled={!!finding}
+              className="px-5 py-2 rounded-lg text-sm font-semibold bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/20 transition disabled:opacity-50">
+              {finding === 'seller' ? 'Searching…' : 'Find sellers (FSBO)'}
+            </button>
+            <button onClick={() => findProspects('buyer')} disabled={!!finding}
+              className="px-5 py-2 rounded-lg text-sm font-semibold bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 border border-cyan-500/20 transition disabled:opacity-50">
+              {finding === 'buyer' ? 'Searching…' : 'Find buyers'}
+            </button>
+          </div>
         </div>
 
         <div className="flex flex-wrap gap-3 mb-10">

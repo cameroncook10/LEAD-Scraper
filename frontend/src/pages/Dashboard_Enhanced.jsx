@@ -92,9 +92,11 @@ function DashboardEnhanced() {
   const [loadingLeads, setLoadingLeads] = useState(false);
 
   const sources = [
+    { value: 'seller_leads', label: 'Seller Leads (FSBO)' },
+    { value: 'buyer_leads', label: 'Buyer Leads' },
     { value: 'web_search', label: 'Web Search' },
     { value: 'google_maps', label: 'Google Maps' },
-    { value: 'zillow', label: 'Zillow' },
+    { value: 'zillow', label: 'Zillow Agents' },
     { value: 'nextdoor', label: 'Nextdoor' }
   ];
 

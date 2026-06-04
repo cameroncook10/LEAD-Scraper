@@ -3,6 +3,7 @@ import { scrapeGoogleMaps } from './scrapers/googleMaps.js';
 import { scrapeZillow } from './scrapers/zillow.js';
 import { scrapeNextdoor } from './scrapers/nextdoor.js';
 import { scrapeWebSearch } from './scrapers/webSearch.js';
+import { scrapeBuyerLeads, scrapeSellerLeads } from './scrapers/realEstateLeads.js';
 import { batchQualifyLeads } from './aiQualification.js';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -10,7 +11,9 @@ const scrapers = {
   google_maps: scrapeGoogleMaps,
   zillow: scrapeZillow,
   nextdoor: scrapeNextdoor,
-  web_search: scrapeWebSearch
+  web_search: scrapeWebSearch,
+  buyer_leads: scrapeBuyerLeads,    // Craigslist "housing wanted" — buyers
+  seller_leads: scrapeSellerLeads,  // Craigslist FSBO — sellers
 };
 
 export const createScrapeJob = async (source, query, limit = 100, userId = null) => {
