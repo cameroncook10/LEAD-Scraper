@@ -7,6 +7,11 @@ const router = express.Router();
 
 // Middleware
 router.use(requireAuth);
+// Clean 503 when the database isn't configured (instead of an unhandled 500)
+router.use((req, res, next) => {
+  if (!supabase) return res.status(503).json({ error: 'Database not configured' });
+  next();
+});
 
 /**
  * GET /api/templates

@@ -3,6 +3,16 @@ import { stringify } from 'csv-stringify/sync';
 
 const router = express.Router();
 
+// Every lead endpoint needs the database — return a clean 503 (like /jobs)
+// rather than an unhandled 500 if Supabase isn't configured or migrations
+// haven't run yet.
+router.use((req, res, next) => {
+  if (!req.app.locals.supabase) {
+    return res.status(503).json({ error: 'Database not configured' });
+  }
+  next();
+});
+
 // ────────────────────────────────────────────────────────────────────────────
 // IMPORTANT: static routes (/export, /stats/summary) MUST be declared
 // before the parameterised route (/:id) to avoid being swallowed by it.

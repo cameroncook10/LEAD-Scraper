@@ -13,6 +13,14 @@ import { encrypt, decrypt } from '../utils/encryption.js';
 
 const router = express.Router();
 
+// Clean 503 when the database isn't configured (instead of an unhandled 500)
+router.use((req, res, next) => {
+  if (!req.app.locals.supabase) {
+    return res.status(503).json({ error: 'Database not configured' });
+  }
+  next();
+});
+
 // Fields that contain secrets and must be encrypted at rest
 const SENSITIVE_FIELDS = ['ig_access_token', 'fb_page_token', 'smtp_pass'];
 
